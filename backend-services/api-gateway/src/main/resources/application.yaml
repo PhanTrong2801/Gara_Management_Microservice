@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: false
+              lower-case-service-id: true
+
+          # Cấu hình định tuyến và bộ lọc
+          routes:
+            # 1. Tuyến đường cho Auth Service (Mở cửa tự do)
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**
+
+            # 2. Tuyến đường cho Repair Service (Bắt buộc có Token)
+            - id: repair-service
+              uri: lb://repair-service
+              predicates:
+                - Path=/api/repair/**
+              filters:
+                - AuthenticationFilter
+
+            # 3. Tuyến đường cho Inventory Service (Bắt buộc có Token)
+            - id: inventory-service
+              uri: lb://inventory-service
+              predicates:
+                - Path=/api/inventory/**
+              filters:
+                - AuthenticationFilter
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-service:8761/eureka/
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.http.server.reactive: DEBUG

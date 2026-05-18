@@ -1,0 +1,84 @@
+
+services:
+  # MySQL cho Auth & Customer Service
+  mysql:
+    image: mysql:8.0
+    container_name: gara-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gara_core_db
+      MYSQL_USER: gara_user
+      MYSQL_PASSWORD: garapassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - gara-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB cho Repair & Inventory Service
+  mongo-db:
+    image: mongo:8.0
+    container_name: gara-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoadmin
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - gara-network
+
+  eureka-service:
+    build:
+      context: ./backend-services/eureka-service
+    container_name: eureka-service
+    ports:
+      - "8761:8761"
+    networks:
+      - gara-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ./backend-services/auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    networks:
+      - gara-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-service:
+        condition: service_started
+
+  api-gateway:
+    build:
+      context: ./backend-services/api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_started
+
+volumes:
+  mysql-data:
+  mongo-data:
+
+networks:
+  gara-network:
+    driver: bridge
