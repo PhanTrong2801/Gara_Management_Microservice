@@ -34,6 +34,11 @@ services:
       - mongo-data:/data/db
     networks:
       - gara-network
+    healthcheck: # <--- Bắt buộc phải có khối này và thẳng hàng với networks
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   eureka-service:
     build:
@@ -44,7 +49,7 @@ services:
     networks:
       - gara-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8761/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -61,7 +66,7 @@ services:
       mysql:
         condition: service_healthy
       eureka-service:
-        condition: service_started
+        condition: service_healthy
 
   api-gateway:
     build:
@@ -73,7 +78,23 @@ services:
       - gara-network
     depends_on:
       eureka-service:
-        condition: service_started
+        condition: service_healthy
+
+  repair-service:
+    build:
+      context: ./backend-services/repair-service
+    container_name: repair-service
+    ports:
+      - "8082:8082"
+    environment: # <--- Bổ sung khối này
+      - SPRING_MONGODB_URI=mongodb://mongoadmin:123456@mongo-db:27017/gara_business_db?authSource=admin
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      mongo-db:
+        condition: service_healthy
 
 volumes:
   mysql-data:

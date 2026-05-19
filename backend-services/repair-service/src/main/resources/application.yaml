@@ -1,0 +1,12 @@
+server:
+  port: 8082
+spring:
+  application:
+    name: repair-service
+  mongodb:
+    uri: ${SPRING_MONGODB_URI:mongodb://mongoadmin:123456@localhost:27017/gara_business_db?authSource=admin}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-service:8761/eureka/
