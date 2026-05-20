@@ -7,6 +7,7 @@ import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFac
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
 
 import javax.crypto.SecretKey;
 
@@ -28,6 +29,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         return (exchange, chain) -> {
             String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
+            //chặn khi không có token
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
@@ -36,16 +38,24 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
             String token = authHeader.substring(7);
 
             try {
-                Jwts.parser()
+                String username = Jwts.parser()
                         .verifyWith(getSignKey())
                         .build()
-                        .parseSignedClaims(token);
+                        .parseSignedClaims(token)
+                        .getPayload()
+                        .getSubject(); // Trích xuất tên đăng nhập
+
+                ServerWebExchange mutatedExchange = exchange.mutate()
+                        .request(requestBuilder -> requestBuilder.header("X-User-Username", username))
+                        .build();
+
+                return chain.filter(mutatedExchange);
+
             } catch (Exception e) {
                 exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                 return exchange.getResponse().setComplete();
             }
 
-            return chain.filter(exchange);
         };
     }
 

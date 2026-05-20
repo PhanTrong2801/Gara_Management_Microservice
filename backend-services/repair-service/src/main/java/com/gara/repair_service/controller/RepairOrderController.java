@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/repair")
 @RequiredArgsConstructor
@@ -29,5 +31,10 @@ public class RepairOrderController {
     @GetMapping("/orders/{orderNumber}")
     public ResponseEntity<RepairOrder> getOrder(@PathVariable String orderNumber){
         return ResponseEntity.ok(repairOrderService.getOrderDetails(orderNumber));
+    }
+
+    @GetMapping("/orders")
+    public ResponseEntity<List<RepairOrder>> getAllOrders(){
+        return ResponseEntity.ok(repairOrderService.getAllOrders());
     }
 }

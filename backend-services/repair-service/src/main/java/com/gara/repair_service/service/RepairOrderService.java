@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -27,6 +28,7 @@ public class RepairOrderService {
         // Ghi nhận ID của người lập phiếu (Lễ tân) lấy từ ngữ cảnh đăng nhập
         // Trong thực tế bạn có thể thêm mảng logs để lưu vết lịch sử
         System.out.println("Phiếu được tạo bới nhân viên: "+ creatorUsername);
+        order.setCreatedBy(creatorUsername);
 
         return repairOrderRepository.save(order);
     }
@@ -34,5 +36,9 @@ public class RepairOrderService {
     public RepairOrder getOrderDetails(String orderNumber){
         return repairOrderRepository.findByOrderNumber(orderNumber)
                 .orElseThrow(()-> new RuntimeException("Không tìm thấy phiếu sửa chữa yêu cầu "));
+    }
+
+    public List<RepairOrder> getAllOrders(){
+        return repairOrderRepository.findAll();
     }
 }

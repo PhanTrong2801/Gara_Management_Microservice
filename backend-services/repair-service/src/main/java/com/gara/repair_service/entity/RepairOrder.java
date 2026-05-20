@@ -19,7 +19,7 @@ public class RepairOrder {
     private String status;     // PENDING, DIAGNOSING, QUOTING, REPAIRING, COMPLETED
     private Long advisorId;    // ID của Lễ tân tiếp nhận
     private Long mechanicId;   // ID của Thợ máy (Manager gán)
-
+    private String createdBy; //nguoi tao
     private Map<String, Object> checkInInfo; // Lưu thông tin linh hoạt (Odo, mức xăng, vết trầy xước)
     private LocalDateTime createdAt = LocalDateTime.now();
 }
