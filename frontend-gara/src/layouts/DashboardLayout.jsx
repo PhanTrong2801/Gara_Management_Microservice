@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import {Link, Outlet} from 'react-router-dom';
 import { ClipboardList, Wrench, CreditCard, Users, Settings, HelpCircle, PlusCircle } from 'lucide-react';
 
 export default function DashboardLayout() {
@@ -24,9 +24,9 @@ export default function DashboardLayout() {
           </nav>
         </div>
         <div className="p-4 border-t">
-          <button className="flex items-center justify-center w-full p-3 mb-4 text-white bg-slate-900 rounded-lg hover:bg-slate-800">
+          <Link to="/dashboard/create-order" className="flex items-center justify-center w-full p-3 mb-4 text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition">
             <PlusCircle className="w-5 h-5 mr-2"/> Tạo phiếu mới
-          </button>
+          </Link>
           <div className="space-y-3 text-sm text-gray-500">
             <a href="#" className="flex items-center hover:text-gray-900"><Settings className="w-4 h-4 mr-3"/> Cài đặt</a>
             <a href="#" className="flex items-center hover:text-gray-900"><HelpCircle className="w-4 h-4 mr-3"/> Hỗ trợ</a>

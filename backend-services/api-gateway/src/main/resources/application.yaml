@@ -37,6 +37,14 @@ spring:
               filters:
                 - AuthenticationFilter
 
+            #4. Customer Service
+            - id: customer-service
+              uri: lb://customer-service
+              predicates:
+                - Path=/api/customers/**
+              filters:
+                - AuthenticationFilter
+
 eureka:
   client:
     service-url:
