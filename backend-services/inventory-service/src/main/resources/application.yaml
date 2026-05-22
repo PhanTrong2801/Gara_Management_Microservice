@@ -1,0 +1,22 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: inventory-service
+  datasource:
+    # Trỏ vào localhost để code trên IntelliJ, khi lên Docker sẽ dùng biến môi trường ghi đè sau
+    url: jdbc:mysql://mysql:3306/inventory_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-service:8761/eureka/

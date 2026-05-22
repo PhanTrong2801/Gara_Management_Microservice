@@ -5,6 +5,7 @@
     <file url="file://$PROJECT_DIR$/backend-services/auth-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/backend-services/customer-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/backend-services/eureka-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend-services/inventory-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/backend-services/repair-service/src/main/java" charset="UTF-8" />
   </component>
 </project>

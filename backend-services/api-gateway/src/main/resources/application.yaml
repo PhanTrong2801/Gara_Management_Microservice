@@ -45,6 +45,14 @@ spring:
               filters:
                 - AuthenticationFilter
 
+            #Inventory Service
+            - id: inventory-service
+              uri: lb://inventory-service
+              predicates:
+                - Path=/api/inventory/**
+              filters:
+                  - AuthenticationFilter
+
 eureka:
   client:
     service-url:

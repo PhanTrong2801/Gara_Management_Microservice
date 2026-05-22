@@ -58,6 +58,7 @@ services:
       timeout: 5s
       retries: 5
 
+
   eureka-service:
     build:
       context: ./backend-services/eureka-service
@@ -129,6 +130,27 @@ services:
       eureka-service:
         condition: service_healthy
       postgres-db:
+        condition: service_healthy
+
+  inventory-service:
+    build:
+      context: ./backend-services/inventory-service # Đường dẫn chuẩn tới thư mục chứa Dockerfile của service kho
+    container_name: inventory-service
+    ports:
+      - "8084:8084"
+    environment:
+      # Ép Spring Boot gọi vào container tên là gara-mysql trong mạng nội bộ Docker thay vì localhost
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/inventory_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      # Ép Eureka Client đăng ký thông qua tên container eureka-service
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      mysql:
         condition: service_healthy
 volumes:
   mysql-data:
