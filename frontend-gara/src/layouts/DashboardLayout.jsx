@@ -9,9 +9,19 @@ export default function DashboardLayout() {
         <div>
           <div className="p-6 text-xl font-bold text-blue-900 border-b">AutoFlow Pro</div>
           <nav className="p-4 space-y-2">
-            <a href="#" className="flex items-center p-3 text-blue-800 bg-blue-50 rounded-lg font-medium">
+            <a href="/dashboard" className="flex items-center p-3 text-blue-800 bg-blue-50 rounded-lg font-medium">
               <ClipboardList className="w-5 h-5 mr-3"/> Tiếp nhận xe
             </a>
+
+            <a href="/dashboard/customers" className="flex items-center p-3 text-blue-800 bg-blue-50 rounded-lg font-medium">
+              <ClipboardList className="w-5 h-5 mr-3"/> Khách hàng & Xe
+            </a>
+
+            <Link to="/dashboard/inventory" className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800 rounded-lg">
+              <ClipboardList className="w-5 h-5" />
+              Kho vật tư
+            </Link>
+
             <a href="#" className="flex items-center p-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <Wrench className="w-5 h-5 mr-3"/> Sửa chữa
             </a>
