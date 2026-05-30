@@ -5,10 +5,10 @@ services:
     image: mysql:8.0
     container_name: gara-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: gara_core_db
       MYSQL_USER: gara_user
-      MYSQL_PASSWORD: garapassword
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -27,7 +27,7 @@ services:
     container_name: gara-mongo
     environment:
       MONGO_INITDB_ROOT_USERNAME: mongoadmin
-      MONGO_INITDB_ROOT_PASSWORD: 123456
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
       - "27017:27017"
     volumes:
@@ -45,7 +45,7 @@ services:
     container_name: gara-postgres
     environment:
       POSTGRES_USER: root
-      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: customer_vehicle_db
     ports:
       - "5432:5432"
@@ -78,6 +78,8 @@ services:
     container_name: auth-service
     ports:
       - "8081:8081"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - gara-network
     depends_on:
@@ -92,6 +94,8 @@ services:
     container_name: api-gateway
     ports:
       - "8080:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - gara-network
     depends_on:
@@ -105,7 +109,7 @@ services:
     ports:
       - "8082:8082"
     environment: # <--- Bổ sung khối này
-      - SPRING_MONGODB_URI=mongodb://mongoadmin:123456@mongo-db:27017/gara_business_db?authSource=admin
+      - SPRING_MONGODB_URI=${MONGO_REPAIR_DB_URI}
     networks:
       - gara-network
     depends_on:
@@ -141,7 +145,7 @@ services:
       # Ép Spring Boot gọi vào container tên là gara-mysql trong mạng nội bộ Docker thay vì localhost
       - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/inventory_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
       # Ép Eureka Client đăng ký thông qua tên container eureka-service
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
     networks:

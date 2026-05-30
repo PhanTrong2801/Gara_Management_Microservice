@@ -18,7 +18,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)// Tắt CSRF vì mình dùng Token
                 .authorizeHttpRequests(auth ->auth
-                        .requestMatchers("/api/auth/login","/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/login","/api/auth/register", "/api/auth/users", "/api/auth/users/**").permitAll()
                         .anyRequest().authenticated()
                 );
         return http.build();

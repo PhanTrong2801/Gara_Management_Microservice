@@ -41,4 +41,14 @@ public class RepairOrderService {
     public List<RepairOrder> getAllOrders(){
         return repairOrderRepository.findAll();
     }
+
+    public RepairOrder updateOrderStatus(String id, String status, Long mechanicId) {
+        RepairOrder order = repairOrderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu sửa chữa"));
+        order.setStatus(status);
+        if (mechanicId != null) {
+            order.setMechanicId(mechanicId);
+        }
+        return repairOrderRepository.save(order);
+    }
 }

@@ -8,6 +8,19 @@ spring:
     gateway:
       server:
         webflux:
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:5173"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: true
           discovery:
             locator:
               enabled: false
@@ -15,7 +28,15 @@ spring:
 
           # Cấu hình định tuyến và bộ lọc
           routes:
-            # 1. Tuyến đường cho Auth Service (Mở cửa tự do)
+            # 1. Tuyến đường cho User Management (Bắt buộc có Token)
+            - id: auth-service-users
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/users/**
+              filters:
+                - AuthenticationFilter
+
+            # 2. Tuyến đường cho Auth Service (Mở cửa tự do - Login/Register)
             - id: auth-service
               uri: lb://auth-service
               predicates:

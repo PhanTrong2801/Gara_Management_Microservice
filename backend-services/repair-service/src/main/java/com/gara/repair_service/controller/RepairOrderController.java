@@ -37,4 +37,15 @@ public class RepairOrderController {
     public ResponseEntity<List<RepairOrder>> getAllOrders(){
         return ResponseEntity.ok(repairOrderService.getAllOrders());
     }
+
+    // API Cập nhật trạng thái phiếu sửa chữa
+    @PutMapping("/orders/{id}/status")
+    public ResponseEntity<RepairOrder> updateOrderStatus(
+            @PathVariable String id,
+            @RequestBody java.util.Map<String, Object> body
+    ){
+        String status = (String) body.get("status");
+        Long mechanicId = body.get("mechanicId") != null ? Long.valueOf(body.get("mechanicId").toString()) : null;
+        return ResponseEntity.ok(repairOrderService.updateOrderStatus(id, status, mechanicId));
+    }
 }

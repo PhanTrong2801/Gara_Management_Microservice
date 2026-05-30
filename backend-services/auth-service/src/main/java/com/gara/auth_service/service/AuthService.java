@@ -53,4 +53,40 @@ public class AuthService {
         userRepository.save(user);
         return "Đăng ký thành công tài khoản: " + request.getUsername();
     }
+
+    public java.util.List<com.gara.auth_service.dto.UserDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(user -> new com.gara.auth_service.dto.UserDto(
+                        user.getId(),
+                        user.getUsername(),
+                        user.getFullName(),
+                        user.getEmail(),
+                        user.getPhone(),
+                        user.getRole().getName(),
+                        user.isActive()
+                )).collect(java.util.stream.Collectors.toList());
+    }
+
+    public com.gara.auth_service.dto.UserDto updateUser(Long id, com.gara.auth_service.dto.UserDto request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+                
+        Role role = roleRepository.findByName(request.getRole())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Role: " + request.getRole()));
+
+        user.setRole(role);
+        user.setActive(request.isActive());
+        
+        userRepository.save(user);
+        
+        return new com.gara.auth_service.dto.UserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole().getName(),
+                user.isActive()
+        );
+    }
 }

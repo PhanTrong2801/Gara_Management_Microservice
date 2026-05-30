@@ -5,6 +5,9 @@ import CreateRepairOrder from "./pages/repair/CreateRepairOrder.jsx";
 import RepairOrderList from './pages/repair/RepairOrderList';
 import CustomerManagement from './pages/customer/CustomerManagement';
 import InventoryManagement from "./pages/inventory/InventoryManagement.jsx";
+import ProtectedRoute from "./layouts/ProtectedRoute.jsx";
+import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
+import RepairManagement from "./pages/repair/RepairManagement.jsx";
 
 
 function App() {
@@ -24,6 +27,13 @@ function App() {
           <Route path="customers" element={<CustomerManagement />} />
 
           <Route path="inventory" element={<InventoryManagement />} />
+
+          <Route path="repairs" element={<RepairManagement />} />
+          
+          {/* Admin routes - Protected for admin and manager */}
+          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MANAGER', 'admin', 'manager']} />}>
+            <Route path="admin" element={<AdminDashboard />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

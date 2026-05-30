@@ -1,0 +1,20 @@
+# Environment variables
+.env
+.env.*
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Build directories
+target/
+build/
+out/
+
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
