@@ -1,6 +1,8 @@
 package com.gara.repair_service.service;
 
 import com.gara.repair_service.entity.RepairOrder;
+import com.gara.repair_service.entity.RepairPart;
+import com.gara.repair_service.entity.RepairTask;
 import com.gara.repair_service.repository.RepairOrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -49,6 +51,20 @@ public class RepairOrderService {
         if (mechanicId != null) {
             order.setMechanicId(mechanicId);
         }
+        return repairOrderRepository.save(order);
+    }
+
+    public RepairOrder updateTasksAndParts(String id, List<RepairTask> tasks, List<RepairPart> parts) {
+        RepairOrder order = repairOrderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu sửa chữa"));
+        
+        if (tasks != null) {
+            order.setTasks(tasks);
+        }
+        if (parts != null) {
+            order.setParts(parts);
+        }
+        
         return repairOrderRepository.save(order);
     }
 }

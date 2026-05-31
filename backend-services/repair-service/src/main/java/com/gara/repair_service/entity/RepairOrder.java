@@ -5,6 +5,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Document(collection = "repair_orders")
@@ -21,5 +23,10 @@ public class RepairOrder {
     private Long mechanicId;   // ID của Thợ máy (Manager gán)
     private String createdBy; //nguoi tao
     private Map<String, Object> checkInInfo; // Lưu thông tin linh hoạt (Odo, mức xăng, vết trầy xước)
+    
+    // Thêm danh sách công việc và phụ tùng
+    private List<RepairTask> tasks = new ArrayList<>();
+    private List<RepairPart> parts = new ArrayList<>();
+    
     private LocalDateTime createdAt = LocalDateTime.now();
 }

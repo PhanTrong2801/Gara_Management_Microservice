@@ -1,11 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, XCircle } from 'lucide-react';
+import { Save, XCircle, Search, ChevronDown } from 'lucide-react';
 import api from '../../api/axiosConfig.js';
 
 export default function CreateRepairOrder() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [customers, setCustomers] = useState([]);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+    // Trạng thái cho Custom Combobox
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
     // State lưu trữ dữ liệu form
     const [formData, setFormData] = useState({
@@ -19,6 +26,43 @@ export default function CreateRepairOrder() {
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+
+    // Lấy danh sách khách hàng khi component mount
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                const response = await api.get('/customers');
+                setCustomers(response.data);
+            } catch (error) {
+                console.error("Lỗi tải khách hàng:", error);
+            }
+        };
+        fetchCustomers();
+    }, []);
+
+    const handleCustomerChange = (custId) => {
+        setFormData({ ...formData, customerId: custId, carId: '' }); // Reset car khi đổi khách
+        const cust = customers.find(c => c.id.toString() === custId.toString());
+        setSelectedCustomer(cust || null);
+        setSearchQuery(''); // Xóa thanh tìm kiếm khi đã chọn
+        setIsDropdownOpen(false);
+    };
+
+    // Đóng dropdown khi click ra ngoài
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const filteredCustomers = customers.filter(c => 
+        c.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        c.phoneNumber.includes(searchQuery)
+    );
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -53,16 +97,63 @@ export default function CreateRepairOrder() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
-                    {/* Thông tin chủ xe & Xe (Tạm nhập tay ID, sau này có thể làm Dropdown chọn từ DB) */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Mã Khách Hàng (ID)</label>
-                        <input type="number" name="customerId" required value={formData.customerId} onChange={handleChange}
-                               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="VD: 10" />
+                    {/* Thông tin chủ xe & Xe */}
+                    <div className="relative" ref={dropdownRef}>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Khách hàng (Tìm kiếm)</label>
+                        <div 
+                            className="relative w-full px-4 py-2 border rounded-lg focus-within:ring-2 focus-within:ring-blue-500 bg-white flex items-center justify-between cursor-text"
+                            onClick={() => setIsDropdownOpen(true)}
+                        >
+                            <input 
+                                type="text"
+                                className="w-full outline-none text-sm"
+                                placeholder={selectedCustomer ? `${selectedCustomer.fullName} - ${selectedCustomer.phoneNumber}` : "Nhập tên hoặc SĐT..."}
+                                value={searchQuery}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setIsDropdownOpen(true);
+                                }}
+                            />
+                            <Search className="w-4 h-4 text-gray-400" />
+                        </div>
+
+                        {/* Dropdown List */}
+                        {isDropdownOpen && (
+                            <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {filteredCustomers.length === 0 ? (
+                                    <li className="px-4 py-3 text-sm text-gray-500">Không tìm thấy khách hàng.</li>
+                                ) : (
+                                    filteredCustomers.map(c => (
+                                        <li 
+                                            key={c.id} 
+                                            onClick={() => handleCustomerChange(c.id)}
+                                            className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0"
+                                        >
+                                            <div className="font-semibold text-gray-800">{c.fullName}</div>
+                                            <div className="text-xs text-gray-500">{c.phoneNumber} {c.address ? `- ${c.address}` : ''}</div>
+                                        </li>
+                                    ))
+                                )}
+                            </ul>
+                        )}
+                        {/* Hidden input to ensure required validation passes if form submits */}
+                        <input type="hidden" name="customerId" required value={formData.customerId} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Mã Xe (ID)</label>
-                        <input type="number" name="carId" required value={formData.carId} onChange={handleChange}
-                               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="VD: 1" />
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Xe (Biển số)</label>
+                        <select 
+                            name="carId" 
+                            required 
+                            value={formData.carId} 
+                            onChange={handleChange}
+                            disabled={!selectedCustomer}
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400"
+                        >
+                            <option value="">-- Chọn phương tiện --</option>
+                            {selectedCustomer && selectedCustomer.vehicles && selectedCustomer.vehicles.map(v => (
+                                <option key={v.id} value={v.id}>{v.licensePlate} ({v.brand} {v.model})</option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Thông tin lúc tiếp nhận */}

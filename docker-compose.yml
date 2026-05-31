@@ -155,6 +155,25 @@ services:
         condition: service_healthy
       mysql:
         condition: service_healthy
+
+  billing-service:
+    build:
+      context: ./backend-services/billing-service
+    container_name: billing-service
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/billing_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
 volumes:
   mysql-data:
   mongo-data:

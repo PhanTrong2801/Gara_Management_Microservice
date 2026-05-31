@@ -74,6 +74,14 @@ spring:
               filters:
                   - AuthenticationFilter
 
+            #5. Billing Service
+            - id: billing-service
+              uri: lb://billing-service
+              predicates:
+                - Path=/api/billing/**
+              filters:
+                - AuthenticationFilter
+
 eureka:
   client:
     service-url:

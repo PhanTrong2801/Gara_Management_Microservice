@@ -14,28 +14,73 @@ export default function AdminDashboard() {
   const currentUserRole = localStorage.getItem('role')?.toUpperCase() || '';
   const isAdmin = currentUserRole === 'ROLE_ADMIN' || currentUserRole === 'ADMIN';
 
+  const [dashboardStats, setDashboardStats] = useState({
+    totalRevenue: 0,
+    totalRepairs: 0,
+    lowStockItems: 0
+  });
+
   const stats = [
-    { title: 'Tổng Doanh Thu', value: '1,240,000,000 ₫', change: '+12.5%', isIncrease: true, icon: <DollarSign className="w-6 h-6 text-emerald-500" /> },
-    { title: 'Tổng Người Dùng', value: users.length.toString(), change: '+2', isIncrease: true, icon: <Users className="w-6 h-6 text-blue-500" /> },
-    { title: 'Đơn Sửa Chữa', value: '430', change: '-4.1%', isIncrease: false, icon: <Activity className="w-6 h-6 text-purple-500" /> },
-    { title: 'Cảnh Báo Kho', value: '12', change: '+2', isIncrease: false, icon: <Package className="w-6 h-6 text-rose-500" /> }
+    { title: 'Tổng Doanh Thu', value: `${dashboardStats.totalRevenue.toLocaleString()} ₫`, change: 'Thực tế', isIncrease: true, icon: <DollarSign className="w-6 h-6 text-emerald-500" /> },
+    { title: 'Tổng Người Dùng', value: users.length.toString(), change: 'Thực tế', isIncrease: true, icon: <Users className="w-6 h-6 text-blue-500" /> },
+    { title: 'Đơn Sửa Chữa', value: dashboardStats.totalRepairs.toString(), change: 'Thực tế', isIncrease: true, icon: <Activity className="w-6 h-6 text-purple-500" /> },
+    { title: 'Cảnh Báo Kho (Dưới 10)', value: dashboardStats.lowStockItems.toString(), change: 'Thực tế', isIncrease: false, icon: <Package className="w-6 h-6 text-rose-500" /> }
   ];
 
   useEffect(() => {
-    fetchUsers();
+    fetchDashboardData();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/auth/users');
-      setUsers(response.data);
+      // Fetch all required data in parallel
+      const [usersRes, invoicesRes, repairsRes, inventoryRes] = await Promise.all([
+        api.get('/auth/users'),
+        api.get('/billing/invoices'),
+        api.get('/repair/orders'),
+        api.get('/inventory/parts')
+      ]);
+
+      setUsers(usersRes.data);
+
+      // Tính tổng doanh thu từ hóa đơn đã thanh toán
+      const invoices = invoicesRes.data || [];
+      const revenue = invoices
+        .filter(inv => inv.status === 'PAID')
+        .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
+
+      // Đếm tổng phiếu sửa chữa
+      const repairs = repairsRes.data || [];
+
+      // Đếm số lượng phụ tùng sắp hết (ví dụ < 10 cái)
+      const parts = inventoryRes.data || [];
+      const lowStockCount = parts.filter(p => p.stockQuantity < 10).length;
+
+      setDashboardStats({
+        totalRevenue: revenue,
+        totalRepairs: repairs.length,
+        lowStockItems: lowStockCount
+      });
+      
     } catch (err) {
-      setError('Lỗi tải danh sách người dùng');
+      setError('Lỗi tải dữ liệu bảng điều khiển');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get('/auth/users');
+      setUsers(response.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+
 
   const handleUpdateUser = async (e) => {
     e.preventDefault();

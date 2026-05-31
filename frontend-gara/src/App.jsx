@@ -8,6 +8,7 @@ import InventoryManagement from "./pages/inventory/InventoryManagement.jsx";
 import ProtectedRoute from "./layouts/ProtectedRoute.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import RepairManagement from "./pages/repair/RepairManagement.jsx";
+import BillingManagement from "./pages/billing/BillingManagement.jsx";
 
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
 
           <Route path="repairs" element={<RepairManagement />} />
           
+          <Route path="billing" element={<BillingManagement />} />
           {/* Admin routes - Protected for admin and manager */}
           <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MANAGER', 'admin', 'manager']} />}>
             <Route path="admin" element={<AdminDashboard />} />

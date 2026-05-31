@@ -1,5 +1,6 @@
 package com.gara.repair_service.controller;
 
+import com.gara.repair_service.dto.RepairDetailsDTO;
 import com.gara.repair_service.entity.RepairOrder;
 import com.gara.repair_service.service.RepairOrderService;
 import lombok.RequiredArgsConstructor;
@@ -47,5 +48,14 @@ public class RepairOrderController {
         String status = (String) body.get("status");
         Long mechanicId = body.get("mechanicId") != null ? Long.valueOf(body.get("mechanicId").toString()) : null;
         return ResponseEntity.ok(repairOrderService.updateOrderStatus(id, status, mechanicId));
+    }
+
+    // API Cập nhật chi tiết (công thợ và phụ tùng) cho phiếu sửa chữa
+    @PutMapping("/orders/{id}/details")
+    public ResponseEntity<RepairOrder> updateOrderDetails(
+            @PathVariable String id,
+            @RequestBody RepairDetailsDTO details
+    ){
+        return ResponseEntity.ok(repairOrderService.updateTasksAndParts(id, details.getTasks(), details.getParts()));
     }
 }

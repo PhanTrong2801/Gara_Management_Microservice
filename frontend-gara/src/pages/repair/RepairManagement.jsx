@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Clock, Wrench, CheckCircle, AlertTriangle, Play, ChevronDown, Search } from 'lucide-react';
+import { Clock, Wrench, CheckCircle, AlertTriangle, Play, ChevronDown, Search, Eye, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axiosConfig';
+import RepairOrderDetailsModal from './RepairOrderDetailsModal';
 
 const STATUS_CONFIG = {
   PENDING:    { label: 'Chờ xử lý',    color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
@@ -13,11 +15,15 @@ const STATUS_CONFIG = {
 const STATUS_FLOW = ['PENDING', 'DIAGNOSING', 'QUOTING', 'REPAIRING', 'COMPLETED'];
 
 export default function RepairManagement() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
+  
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -42,6 +48,20 @@ export default function RepairManagement() {
       fetchOrders();
     } catch (error) {
       alert('Cập nhật trạng thái thất bại!');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleGenerateInvoice = async (order) => {
+    try {
+      setUpdatingId(order.id);
+      await api.post('/billing/invoices', { repairOrderNumber: order.orderNumber });
+      alert('Đã tạo hóa đơn thành công!');
+      navigate('/dashboard/billing');
+    } catch (error) {
+      console.error('Lỗi tạo hóa đơn:', error);
+      alert('Hóa đơn cho phiếu này có thể đã được tạo hoặc xảy ra lỗi.');
     } finally {
       setUpdatingId(null);
     }
@@ -190,26 +210,42 @@ export default function RepairManagement() {
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-center">
-                        {nextStatus ? (
+                        <div className="flex justify-center gap-2">
                           <button
-                            disabled={updatingId === order.id}
-                            onClick={() => handleUpdateStatus(order.id, nextStatus)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 ${nextConfig.color} hover:opacity-80`}
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setIsModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
                           >
-                            {updatingId === order.id ? (
-                              '...'
-                            ) : (
-                              <>
-                                <Play className="w-3 h-3" />
-                                {nextConfig.label}
-                              </>
-                            )}
+                            <Eye className="w-3 h-3" /> Chi tiết
                           </button>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-semibold">
-                            <CheckCircle className="w-4 h-4" /> Xong
-                          </span>
-                        )}
+                          
+                          {nextStatus ? (
+                            <button
+                              disabled={updatingId === order.id}
+                              onClick={() => handleUpdateStatus(order.id, nextStatus)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 ${nextConfig.color} hover:opacity-80`}
+                            >
+                              {updatingId === order.id ? (
+                                '...'
+                              ) : (
+                                <>
+                                  <Play className="w-3 h-3" />
+                                  {nextConfig.label}
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              disabled={updatingId === order.id}
+                              onClick={() => handleGenerateInvoice(order)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200"
+                            >
+                              {updatingId === order.id ? '...' : <><FileText className="w-3 h-3" /> Xuất hóa đơn</>}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -219,6 +255,17 @@ export default function RepairManagement() {
           </table>
         </div>
       </div>
+
+      {/* Modal Chi tiết */}
+      <RepairOrderDetailsModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        order={selectedOrder}
+        onSaveSuccess={() => {
+          setIsModalOpen(false);
+          fetchOrders(); // Tải lại danh sách sau khi lưu thành công
+        }}
+      />
     </div>
   );
 }
