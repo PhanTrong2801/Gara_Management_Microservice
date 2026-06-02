@@ -17,7 +17,11 @@ export default function LoginPage(){
             localStorage.setItem('role', response.data.role);
             localStorage.setItem('username', response.data.username);
             
-            navigate('/dashboard');
+            if (response.data.role === 'CUSTOMER' || response.data.role === 'ROLE_CUSTOMER') {
+                navigate('/customer');
+            } else {
+                navigate('/dashboard');
+            }
         }catch(err){
             setError('Đăng nhập thất bại');
         }

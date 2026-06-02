@@ -39,6 +39,11 @@ public class RepairOrderController {
         return ResponseEntity.ok(repairOrderService.getAllOrders());
     }
 
+    @GetMapping("/orders/customer/{customerId}")
+    public ResponseEntity<List<RepairOrder>> getOrdersByCustomerId(@PathVariable Long customerId){
+        return ResponseEntity.ok(repairOrderService.getOrdersByCustomerId(customerId));
+    }
+
     // API Cập nhật trạng thái phiếu sửa chữa
     @PutMapping("/orders/{id}/status")
     public ResponseEntity<RepairOrder> updateOrderStatus(

@@ -40,15 +40,22 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
             String token = authHeader.substring(7);
 
             try {
-                String username = Jwts.parser()
+                io.jsonwebtoken.Claims claims = Jwts.parser()
                         .verifyWith(getSignKey())
                         .build()
                         .parseSignedClaims(token)
-                        .getPayload()
-                        .getSubject(); // Trích xuất tên đăng nhập
+                        .getPayload();
+                        
+                String username = claims.getSubject(); // Trích xuất tên đăng nhập
+                Long userId = claims.get("userId", Long.class);
 
                 ServerWebExchange mutatedExchange = exchange.mutate()
-                        .request(requestBuilder -> requestBuilder.header("X-User-Username", username))
+                        .request(requestBuilder -> {
+                            requestBuilder.header("X-User-Username", username);
+                            if (userId != null) {
+                                requestBuilder.header("X-User-Id", String.valueOf(userId));
+                            }
+                        })
                         .build();
 
                 return chain.filter(mutatedExchange);

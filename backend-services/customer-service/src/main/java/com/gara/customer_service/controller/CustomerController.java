@@ -1,6 +1,7 @@
 package com.gara.customer_service.controller;
 
 import com.gara.customer_service.dto.CustomerDTO;
+import com.gara.customer_service.dto.InternalCustomerDTO;
 import com.gara.customer_service.dto.VehicleDTO;
 import com.gara.customer_service.entity.Customer;
 import com.gara.customer_service.entity.Vehicle;
@@ -24,6 +25,20 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.createCustomer(dto));
     }
 
+    @PostMapping("/internal")
+    public ResponseEntity<Customer> createInternalCustomer(@RequestBody InternalCustomerDTO dto){
+        return ResponseEntity.ok(customerService.createInternalCustomer(dto));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<Customer> getMyProfile(@RequestHeader(value = "X-User-Id", required = false) String userIdStr){
+        if (userIdStr == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Long userId = Long.valueOf(userIdStr);
+        return ResponseEntity.ok(customerService.getCustomerByUserId(userId));
+    }
+
     @PostMapping("/vehicles")
     public ResponseEntity<Vehicle> addVehicle(@Valid @RequestBody VehicleDTO dto){
         return ResponseEntity.ok(customerService.addVehicle(dto));
@@ -37,6 +52,11 @@ public class CustomerController {
     @GetMapping
     public ResponseEntity<List<Customer>> getAllCustomers() {
         return ResponseEntity.ok(customerService.getAllCustomers());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @Valid @RequestBody CustomerDTO dto) {
+        return ResponseEntity.ok(customerService.updateCustomer(id, dto));
     }
 }
 

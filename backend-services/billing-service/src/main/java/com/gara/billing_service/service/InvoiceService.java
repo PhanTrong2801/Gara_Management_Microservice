@@ -98,6 +98,10 @@ public class InvoiceService {
         return invoiceRepository.findAll();
     }
 
+    public List<Invoice> getInvoicesByCustomerId(Long customerId) {
+        return invoiceRepository.findByCustomerId(customerId);
+    }
+
     public Invoice getInvoiceByNumber(String invoiceNumber) {
         return invoiceRepository.findByInvoiceNumber(invoiceNumber)
                 .orElseThrow(() -> new RuntimeException("Invoice not found"));

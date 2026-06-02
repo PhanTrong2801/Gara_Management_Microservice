@@ -1,5 +1,5 @@
 import {Link, Outlet, useLocation} from 'react-router-dom';
-import { ClipboardList, Wrench, CreditCard, Users, Settings, HelpCircle, PlusCircle, Package, LogOut } from 'lucide-react';
+import { ClipboardList, Wrench, CreditCard, Users, Settings, HelpCircle, PlusCircle, Package, LogOut, Calendar } from 'lucide-react';
 
 export default function DashboardLayout() {
   const role = localStorage.getItem('role');
@@ -20,6 +20,7 @@ export default function DashboardLayout() {
   // Menu items
   const menuItems = [
     { path: '/dashboard', label: 'Tiếp nhận xe', icon: <ClipboardList className="w-5 h-5 mr-3" /> },
+    { path: '/dashboard/appointments', label: 'Lịch hẹn', icon: <Calendar className="w-5 h-5 mr-3" /> },
     { path: '/dashboard/customers', label: 'Khách hàng & Xe', icon: <Users className="w-5 h-5 mr-3" /> },
     { path: '/dashboard/inventory', label: 'Kho vật tư', icon: <Package className="w-5 h-5 mr-3" /> },
     { path: '/dashboard/repairs', label: 'Sửa chữa', icon: <Wrench className="w-5 h-5 mr-3" /> },
@@ -29,6 +30,7 @@ export default function DashboardLayout() {
   // Page titles
   const getPageTitle = () => {
     if (location.pathname === '/dashboard') return 'Khu vực tiếp nhận (Reception)';
+    if (location.pathname.startsWith('/dashboard/appointments')) return 'Quản lý Lịch hẹn khách hàng';
     if (location.pathname.startsWith('/dashboard/customers')) return 'Quản lý Khách hàng & Xe';
     if (location.pathname.startsWith('/dashboard/inventory')) return 'Quản lý Kho vật tư';
     if (location.pathname.startsWith('/dashboard/repairs')) return 'Quản lý Sửa chữa';

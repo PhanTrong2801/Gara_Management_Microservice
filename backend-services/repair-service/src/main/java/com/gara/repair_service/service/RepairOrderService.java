@@ -44,6 +44,10 @@ public class RepairOrderService {
         return repairOrderRepository.findAll();
     }
 
+    public List<RepairOrder> getOrdersByCustomerId(Long customerId) {
+        return repairOrderRepository.findByCustomerId(customerId);
+    }
+
     public RepairOrder updateOrderStatus(String id, String status, Long mechanicId) {
         RepairOrder order = repairOrderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu sửa chữa"));

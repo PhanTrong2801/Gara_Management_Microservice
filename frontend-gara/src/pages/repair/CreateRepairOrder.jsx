@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Save, XCircle, Search, ChevronDown } from 'lucide-react';
 import api from '../../api/axiosConfig.js';
 
 export default function CreateRepairOrder() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [customers, setCustomers] = useState([]);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -20,7 +21,7 @@ export default function CreateRepairOrder() {
         carId: '',
         odo: '',
         fuelLevel: '50%',
-        scratches: ''
+        scratches: location.state?.prefillDescription || '' // Nhận dữ liệu từ Lịch hẹn (nếu có)
     });
 
     const handleChange = (e) => {
@@ -33,12 +34,23 @@ export default function CreateRepairOrder() {
             try {
                 const response = await api.get('/customers');
                 setCustomers(response.data);
+                
+                // Tự động tìm và chọn khách hàng nếu có truyền SĐT từ Lịch hẹn
+                if (location.state?.prefillCustomerPhone && response.data.length > 0) {
+                    const phone = location.state.prefillCustomerPhone;
+                    const customerMatch = response.data.find(c => c.phoneNumber === phone);
+                    if (customerMatch) {
+                        setSelectedCustomer(customerMatch);
+                        setFormData(prev => ({ ...prev, customerId: customerMatch.id }));
+                        setSearchQuery(customerMatch.fullName);
+                    }
+                }
             } catch (error) {
                 console.error("Lỗi tải khách hàng:", error);
             }
         };
         fetchCustomers();
-    }, []);
+    }, [location.state]);
 
     const handleCustomerChange = (custId) => {
         setFormData({ ...formData, customerId: custId, carId: '' }); // Reset car khi đổi khách

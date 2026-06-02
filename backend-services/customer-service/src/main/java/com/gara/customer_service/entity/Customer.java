@@ -29,6 +29,9 @@ public class Customer {
     private String email;
     private String address;
 
+    @Column(name = "user_id", unique = true)
+    private Long userId;
+
     // Quan hệ 1-N: 1 Khách hàng có nhiều Xe
     // CascadeType.ALL: Khi xóa khách hàng thì xóa luôn xe của họ
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)

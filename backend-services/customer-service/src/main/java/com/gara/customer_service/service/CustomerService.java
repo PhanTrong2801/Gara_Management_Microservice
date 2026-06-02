@@ -1,6 +1,7 @@
 package com.gara.customer_service.service;
 
 import com.gara.customer_service.dto.CustomerDTO;
+import com.gara.customer_service.dto.InternalCustomerDTO;
 import com.gara.customer_service.dto.VehicleDTO;
 import com.gara.customer_service.entity.Customer;
 import com.gara.customer_service.entity.Vehicle;
@@ -35,6 +36,24 @@ public class CustomerService {
 
     }
 
+    @Transactional
+    public Customer createInternalCustomer(InternalCustomerDTO dto) {
+        if (dto.getPhoneNumber() != null && customerRepository.findByPhoneNumber(dto.getPhoneNumber()).isPresent()){
+            throw new RuntimeException("Số điện thoại này đã tồn tại trong hệ thống!");
+        }
+        if (dto.getUserId() != null && customerRepository.findByUserId(dto.getUserId()).isPresent()){
+            throw new RuntimeException("UserId này đã được đăng ký!");
+        }
+        
+        Customer customer = new Customer();
+        customer.setFullName(dto.getFullName());
+        customer.setPhoneNumber(dto.getPhoneNumber() != null ? dto.getPhoneNumber() : "N/A");
+        customer.setEmail(dto.getEmail());
+        customer.setUserId(dto.getUserId());
+        
+        return customerRepository.save(customer);
+    }
+
     // 2. Thêm xe vào tài khoản khách hàng có sẵn
     @Transactional
     public Vehicle addVehicle(VehicleDTO dto) {
@@ -61,11 +80,28 @@ public class CustomerService {
     public Customer getCustomerById(Long id){
         return customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng sở hữu có ID: "+id));
+    }
 
+    public Customer getCustomerByUserId(Long userId){
+        return customerRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng ứng với userId: "+userId));
     }
 
     // 4. Lấy tất cả khách hàng
     public List<Customer> getAllCustomers() {
         return customerRepository.findAll();
+    }
+
+    @Transactional
+    public Customer updateCustomer(Long id, CustomerDTO dto) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
+
+        customer.setFullName(dto.getFullName());
+        customer.setPhoneNumber(dto.getPhoneNumber());
+        customer.setEmail(dto.getEmail());
+        customer.setAddress(dto.getAddress());
+
+        return customerRepository.save(customer);
     }
 }

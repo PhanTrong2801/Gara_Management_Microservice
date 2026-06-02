@@ -8,6 +8,8 @@ import com.gara.auth_service.entity.User;
 import com.gara.auth_service.repository.RoleRepository;
 import com.gara.auth_service.repository.UserRepository;
 import com.gara.auth_service.util.JwtUtil;
+import com.gara.auth_service.client.CustomerServiceClient;
+import com.gara.auth_service.dto.InternalCustomerDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final CustomerServiceClient customerServiceClient;
 
     // Logic Đăng nhập
     public AuthResponse login(AuthRequest request) {
@@ -30,7 +33,7 @@ public class AuthService {
             throw new RuntimeException("Sai mật khẩu");
         }
 
-        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().getName());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole().getName());
         return new AuthResponse(token, user.getUsername(), user.getRole().getName());
     }
 
@@ -50,7 +53,24 @@ public class AuthService {
         user.setRole(role);
         user.setActive(true);
 
-        userRepository.save(user);
+        user = userRepository.save(user);
+
+        // Nếu là tài khoản CUSTOMER thì đồng bộ qua customer-service
+        if (role.getName().equalsIgnoreCase("CUSTOMER") || role.getName().equalsIgnoreCase("ROLE_CUSTOMER")) {
+            InternalCustomerDTO dto = InternalCustomerDTO.builder()
+                    .userId(user.getId())
+                    .fullName(user.getFullName())
+                    .email(user.getEmail())
+                    .phoneNumber(user.getPhone())
+                    .build();
+            try {
+                customerServiceClient.createInternalCustomer(dto);
+            } catch (Exception e) {
+                // Log lỗi, có thể cân nhắc throw RuntimeException nếu bắt buộc phải có
+                System.err.println("Không thể tạo Customer bên customer-service: " + e.getMessage());
+            }
+        }
+
         return "Đăng ký thành công tài khoản: " + request.getUsername();
     }
 

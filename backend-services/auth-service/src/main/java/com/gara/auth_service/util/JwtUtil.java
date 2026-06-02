@@ -22,9 +22,10 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
     // Hàm tạo Token khi đăng nhập thành công
-    public String generateToken(String username, String roleName){
+    public String generateToken(Long userId, String username, String roleName){
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", roleName);
+        claims.put("userId", userId);
 
         return Jwts.builder()
                 .claims(claims)

@@ -9,7 +9,14 @@ import ProtectedRoute from "./layouts/ProtectedRoute.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import RepairManagement from "./pages/repair/RepairManagement.jsx";
 import BillingManagement from "./pages/billing/BillingManagement.jsx";
+import AppointmentManagement from "./pages/repair/AppointmentManagement.jsx";
 
+// Customer Portal components
+import CustomerLayout from './layouts/CustomerLayout.jsx';
+import CustomerDashboard from './pages/customer-portal/CustomerDashboard.jsx';
+import RepairTracking from './pages/customer-portal/RepairTracking.jsx';
+import BookingAppointment from './pages/customer-portal/BookingAppointment.jsx';
+import CustomerBilling from './pages/customer-portal/CustomerBilling.jsx';
 
 function App() {
   return (
@@ -32,10 +39,25 @@ function App() {
           <Route path="repairs" element={<RepairManagement />} />
           
           <Route path="billing" element={<BillingManagement />} />
+          
+          <Route path="appointments" element={<AppointmentManagement />} />
+
           {/* Admin routes - Protected for admin and manager */}
           <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MANAGER', 'admin', 'manager']} />}>
             <Route path="admin" element={<AdminDashboard />} />
           </Route>
+        </Route>
+
+        {/* Khách hàng - Customer Portal */}
+        <Route path="/customer" element={
+          <ProtectedRoute allowedRoles={['ROLE_CUSTOMER', 'CUSTOMER']}>
+            <CustomerLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<CustomerDashboard />} />
+          <Route path="tracking" element={<RepairTracking />} />
+          <Route path="booking" element={<BookingAppointment />} />
+          <Route path="billing" element={<CustomerBilling />} />
         </Route>
       </Routes>
     </BrowserRouter>
