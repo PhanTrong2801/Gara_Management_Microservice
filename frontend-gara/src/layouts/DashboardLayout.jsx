@@ -17,15 +17,20 @@ export default function DashboardLayout() {
   const activeStyle = "text-blue-800 bg-blue-50";
   const inactiveStyle = "text-gray-600 hover:bg-gray-100";
 
-  // Menu items
-  const menuItems = [
-    { path: '/dashboard', label: 'Tiếp nhận xe', icon: <ClipboardList className="w-5 h-5 mr-3" /> },
-    { path: '/dashboard/appointments', label: 'Lịch hẹn', icon: <Calendar className="w-5 h-5 mr-3" /> },
-    { path: '/dashboard/customers', label: 'Khách hàng & Xe', icon: <Users className="w-5 h-5 mr-3" /> },
-    { path: '/dashboard/inventory', label: 'Kho vật tư', icon: <Package className="w-5 h-5 mr-3" /> },
-    { path: '/dashboard/repairs', label: 'Sửa chữa', icon: <Wrench className="w-5 h-5 mr-3" /> },
-    { path: '/dashboard/billing', label: 'Thanh toán', icon: <CreditCard className="w-5 h-5 mr-3" /> },
+  const userRole = role ? role.toUpperCase() : '';
+
+  // Menu items config with allowed roles
+  const menuConfig = [
+    { path: '/dashboard', label: 'Tiếp nhận xe', icon: <ClipboardList className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
+    { path: '/dashboard/appointments', label: 'Lịch hẹn', icon: <Calendar className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER', 'ROLE_RECEPTIONIST', 'RECEPTIONIST'] },
+    { path: '/dashboard/customers', label: 'Khách hàng & Xe', icon: <Users className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER', 'ROLE_RECEPTIONIST', 'RECEPTIONIST'] },
+    { path: '/dashboard/inventory', label: 'Kho vật tư', icon: <Package className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
+    { path: '/dashboard/services', label: 'Dịch vụ', icon: <Settings className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
+    { path: '/dashboard/repairs', label: 'Sửa chữa', icon: <Wrench className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER', 'ROLE_MECHANIC', 'MECHANIC'] },
+    { path: '/dashboard/billing', label: 'Thanh toán', icon: <CreditCard className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_RECEPTIONIST', 'RECEPTIONIST'] },
   ];
+
+  const menuItems = menuConfig.filter(item => item.roles.includes(userRole));
 
   // Page titles
   const getPageTitle = () => {
@@ -33,12 +38,15 @@ export default function DashboardLayout() {
     if (location.pathname.startsWith('/dashboard/appointments')) return 'Quản lý Lịch hẹn khách hàng';
     if (location.pathname.startsWith('/dashboard/customers')) return 'Quản lý Khách hàng & Xe';
     if (location.pathname.startsWith('/dashboard/inventory')) return 'Quản lý Kho vật tư';
+    if (location.pathname.startsWith('/dashboard/services')) return 'Quản lý Danh mục Dịch vụ';
     if (location.pathname.startsWith('/dashboard/repairs')) return 'Quản lý Sửa chữa';
     if (location.pathname.startsWith('/dashboard/billing')) return 'Thanh toán & Hóa đơn';
     if (location.pathname.startsWith('/dashboard/create-order')) return 'Tạo phiếu sửa chữa mới';
     if (location.pathname.startsWith('/dashboard/admin')) return 'Bảng điều khiển Quản trị';
     return 'Dashboard';
   };
+
+  const canCreateOrder = ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'].includes(userRole);
 
   return (
     <div className="flex h-screen bg-gray-50 text-slate-800">
@@ -68,9 +76,11 @@ export default function DashboardLayout() {
           </nav>
         </div>
         <div className="p-4 border-t">
-          <Link to="/dashboard/create-order" className="flex items-center justify-center w-full p-3 mb-4 text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition">
-            <PlusCircle className="w-5 h-5 mr-2"/> Tạo phiếu mới
-          </Link>
+          {canCreateOrder && (
+            <Link to="/dashboard/create-order" className="flex items-center justify-center w-full p-3 mb-4 text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition">
+              <PlusCircle className="w-5 h-5 mr-2"/> Tạo phiếu mới
+            </Link>
+          )}
           <div className="space-y-3 text-sm text-gray-500 mb-4">
             <a href="#" className="flex items-center hover:text-gray-900"><HelpCircle className="w-4 h-4 mr-3"/> Hỗ trợ</a>
           </div>

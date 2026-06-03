@@ -7,36 +7,53 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
   const [parts, setParts] = useState([]);
   
   const [availableParts, setAvailableParts] = useState([]);
+  const [availableServices, setAvailableServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const role = localStorage.getItem('role') || '';
+  const isMechanic = ['ROLE_MECHANIC', 'MECHANIC'].includes(role.toUpperCase());
 
   useEffect(() => {
     if (isOpen && order) {
       setTasks(order.tasks || []);
       setParts(order.parts || []);
-      fetchAvailableParts();
+      fetchCatalog();
     }
   }, [isOpen, order]);
 
-  const fetchAvailableParts = async () => {
+  const fetchCatalog = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/inventory/parts');
-      setAvailableParts(response.data);
+      const [partsRes, servicesRes] = await Promise.all([
+        api.get('/inventory/parts'),
+        api.get('/repair/service-catalog')
+      ]);
+      setAvailableParts(partsRes.data);
+      setAvailableServices(servicesRes.data);
     } catch (error) {
-      console.error('Lỗi tải danh sách phụ tùng:', error);
+      console.error('Lỗi tải danh mục:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddTask = () => {
-    setTasks([...tasks, { name: '', cost: 0 }]);
+    setTasks([...tasks, { serviceCatalogId: '', name: '', cost: 0 }]);
   };
 
   const handleUpdateTask = (index, field, value) => {
     const updatedTasks = [...tasks];
-    updatedTasks[index][field] = value;
+    if (field === 'serviceCatalogId') {
+      const selectedSvc = availableServices.find(s => s.id === value);
+      if (selectedSvc) {
+        updatedTasks[index].serviceCatalogId = selectedSvc.id;
+        updatedTasks[index].name = selectedSvc.name;
+        updatedTasks[index].cost = selectedSvc.defaultCost;
+      }
+    } else {
+      updatedTasks[index][field] = value;
+    }
     setTasks(updatedTasks);
   };
 
@@ -120,20 +137,31 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
               ) : (
                 tasks.map((task, idx) => (
                   <div key={idx} className="flex gap-4 items-center bg-gray-50 p-3 rounded-lg">
-                    <input 
-                      type="text" 
-                      placeholder="Tên công việc (VD: Thay nhớt máy)"
+                    {/* Luôn dùng Dropdown cho Tên dịch vụ (tránh nhập tự do) */}
+                    <select 
                       className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={task.name}
-                      onChange={(e) => handleUpdateTask(idx, 'name', e.target.value)}
-                    />
-                    <input 
-                      type="number" 
-                      placeholder="Tiền công (VNĐ)"
-                      className="w-40 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={task.cost}
-                      onChange={(e) => handleUpdateTask(idx, 'cost', Number(e.target.value))}
-                    />
+                      value={task.serviceCatalogId || ''}
+                      onChange={(e) => handleUpdateTask(idx, 'serviceCatalogId', e.target.value)}
+                    >
+                      <option value="">-- Chọn dịch vụ --</option>
+                      {availableServices.map(svc => (
+                        <option key={svc.id} value={svc.id}>
+                          {svc.name} {!isMechanic && `- ${svc.defaultCost.toLocaleString()} VNĐ`}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Chỉ Admin/Manager/Receptionist mới thấy giá và sửa giá */}
+                    {!isMechanic && (
+                      <input 
+                        type="number" 
+                        placeholder="Tiền công (VNĐ)"
+                        className="w-40 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={task.cost}
+                        onChange={(e) => handleUpdateTask(idx, 'cost', Number(e.target.value))}
+                      />
+                    )}
+
                     <button onClick={() => handleRemoveTask(idx)} className="text-red-500 hover:text-red-700 p-2">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -168,7 +196,7 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
                       <option value="">-- Chọn phụ tùng từ kho --</option>
                       {availableParts.map(ap => (
                         <option key={ap.id} value={ap.id}>
-                          {ap.name} - Tồn: {ap.quantity} cái - Giá: {ap.price.toLocaleString()} VNĐ
+                          {ap.name} - Tồn: {ap.quantity} cái {!isMechanic && `- Giá: ${ap.price.toLocaleString()} VNĐ`}
                         </option>
                       ))}
                     </select>
@@ -182,9 +210,12 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
                       onChange={(e) => handleUpdatePart(idx, 'quantity', Number(e.target.value))}
                     />
 
-                    <div className="w-32 text-right text-sm font-medium text-gray-700">
-                      {(part.quantity * part.unitPrice || 0).toLocaleString()} VNĐ
-                    </div>
+                    {/* Chỉ hiện Thành tiền nếu KHÔNG phải thợ máy */}
+                    {!isMechanic && (
+                      <div className="w-32 text-right text-sm font-medium text-gray-700">
+                        {(part.quantity * part.unitPrice || 0).toLocaleString()} VNĐ
+                      </div>
+                    )}
 
                     <button onClick={() => handleRemovePart(idx)} className="text-red-500 hover:text-red-700 p-2">
                       <Trash2 className="w-4 h-4" />
@@ -195,16 +226,18 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
             </div>
           </section>
 
-          {/* Summary */}
-          <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex justify-between items-center">
-            <span className="font-medium text-blue-900">Tạm tính:</span>
-            <span className="text-xl font-bold text-blue-700">
-              {(
-                tasks.reduce((sum, t) => sum + (Number(t.cost) || 0), 0) +
-                parts.reduce((sum, p) => sum + ((Number(p.quantity) || 0) * (Number(p.unitPrice) || 0)), 0)
-              ).toLocaleString()} VNĐ
-            </span>
-          </div>
+          {/* Summary - Bị ẩn đối với thợ máy */}
+          {!isMechanic && (
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex justify-between items-center">
+              <span className="font-medium text-blue-900">Tạm tính:</span>
+              <span className="text-xl font-bold text-blue-700">
+                {(
+                  tasks.reduce((sum, t) => sum + (Number(t.cost) || 0), 0) +
+                  parts.reduce((sum, p) => sum + ((Number(p.quantity) || 0) * (Number(p.unitPrice) || 0)), 0)
+                ).toLocaleString()} VNĐ
+              </span>
+            </div>
+          )}
 
         </div>
 

@@ -10,6 +10,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import RepairManagement from "./pages/repair/RepairManagement.jsx";
 import BillingManagement from "./pages/billing/BillingManagement.jsx";
 import AppointmentManagement from "./pages/repair/AppointmentManagement.jsx";
+import ServiceCatalogManagement from "./pages/repair/ServiceCatalogManagement.jsx";
 
 // Customer Portal components
 import CustomerLayout from './layouts/CustomerLayout.jsx';
@@ -41,6 +42,8 @@ function App() {
           <Route path="billing" element={<BillingManagement />} />
           
           <Route path="appointments" element={<AppointmentManagement />} />
+
+          <Route path="services" element={<ServiceCatalogManagement />} />
 
           {/* Admin routes - Protected for admin and manager */}
           <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MANAGER', 'admin', 'manager']} />}>
