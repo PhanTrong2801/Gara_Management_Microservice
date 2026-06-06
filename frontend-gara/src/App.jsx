@@ -30,25 +30,32 @@ function App() {
 
         {/* Nhóm các trang nằm gọn bên trong Dashboard Layout */}
         <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<RepairOrderList />} />
-          <Route path="create-order" element={<CreateRepairOrder />} />
-
-          <Route path="customers" element={<CustomerManagement />} />
-
-          <Route path="inventory" element={<InventoryManagement />} />
-
-          <Route path="repairs" element={<RepairManagement />} />
           
-          <Route path="billing" element={<BillingManagement />} />
-          
-          <Route path="appointments" element={<AppointmentManagement />} />
+          {/* RECEPTIONIST, MANAGER, ADMIN */}
+          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER', 'ROLE_RECEPTIONIST', 'RECEPTIONIST']} />}>
+            <Route path="appointments" element={<AppointmentManagement />} />
+            <Route path="customers" element={<CustomerManagement />} />
+          </Route>
 
-          <Route path="services" element={<ServiceCatalogManagement />} />
-
-          {/* Admin routes - Protected for admin and manager */}
-          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MANAGER', 'admin', 'manager']} />}>
+          {/* MANAGER, ADMIN */}
+          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER']} />}>
+            <Route index element={<RepairOrderList />} />
+            <Route path="create-order" element={<CreateRepairOrder />} />
+            <Route path="inventory" element={<InventoryManagement />} />
+            <Route path="services" element={<ServiceCatalogManagement />} />
             <Route path="admin" element={<AdminDashboard />} />
           </Route>
+
+          {/* MECHANIC, MANAGER, ADMIN */}
+          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER', 'ROLE_MECHANIC', 'MECHANIC']} />}>
+            <Route path="repairs" element={<RepairManagement />} />
+          </Route>
+
+          {/* RECEPTIONIST, ADMIN */}
+          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_RECEPTIONIST', 'RECEPTIONIST']} />}>
+            <Route path="billing" element={<BillingManagement />} />
+          </Route>
+
         </Route>
 
         {/* Khách hàng - Customer Portal */}

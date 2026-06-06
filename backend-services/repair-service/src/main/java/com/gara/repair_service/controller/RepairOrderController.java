@@ -46,13 +46,17 @@ public class RepairOrderController {
 
     // API Cập nhật trạng thái phiếu sửa chữa
     @PutMapping("/orders/{id}/status")
-    public ResponseEntity<RepairOrder> updateOrderStatus(
+    public ResponseEntity<?> updateOrderStatus(
             @PathVariable String id,
             @RequestBody java.util.Map<String, Object> body
     ){
-        String status = (String) body.get("status");
-        Long mechanicId = body.get("mechanicId") != null ? Long.valueOf(body.get("mechanicId").toString()) : null;
-        return ResponseEntity.ok(repairOrderService.updateOrderStatus(id, status, mechanicId));
+        try {
+            String status = (String) body.get("status");
+            Long mechanicId = body.get("mechanicId") != null ? Long.valueOf(body.get("mechanicId").toString()) : null;
+            return ResponseEntity.ok(repairOrderService.updateOrderStatus(id, status, mechanicId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // API Cập nhật chi tiết (công thợ và phụ tùng) cho phiếu sửa chữa

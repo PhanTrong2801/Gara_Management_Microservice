@@ -57,6 +57,24 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: gara-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - gara-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
 
   eureka-service:
     build:
@@ -110,12 +128,15 @@ services:
       - "8082:8082"
     environment: # <--- Bổ sung khối này
       - SPRING_MONGODB_URI=${MONGO_REPAIR_DB_URI}
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
     networks:
       - gara-network
     depends_on:
       eureka-service:
         condition: service_healthy
       mongo-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   customer-service:
@@ -148,12 +169,15 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
       # Ép Eureka Client đăng ký thông qua tên container eureka-service
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
     networks:
       - gara-network
     depends_on:
       eureka-service:
         condition: service_healthy
       mysql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   billing-service:

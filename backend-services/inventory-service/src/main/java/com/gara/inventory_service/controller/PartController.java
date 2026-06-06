@@ -41,4 +41,14 @@ public class PartController {
             @RequestParam int quantityChange) {
         return ResponseEntity.ok(partService.updateStock(id, quantityChange));
     }
+
+    @PostMapping("/check-stock")
+    public ResponseEntity<String> checkStock(@RequestBody com.gara.inventory_service.dto.StockCheckRequest request) {
+        try {
+            partService.checkStock(request);
+            return ResponseEntity.ok("OK");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

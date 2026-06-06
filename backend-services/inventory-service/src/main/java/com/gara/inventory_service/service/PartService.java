@@ -50,4 +50,13 @@ public class PartService {
         part.setStockQuantity(newStock);
         return partRepository.save(part);
     }
+
+    public void checkStock(com.gara.inventory_service.dto.StockCheckRequest request) {
+        for (com.gara.inventory_service.dto.StockCheckRequest.PartRequest pr : request.getParts()) {
+            Part part = getPartById(pr.getPartId());
+            if (part.getStockQuantity() < pr.getQuantity()) {
+                throw new RuntimeException("Phụ tùng '" + part.getName() + "' (Mã: " + part.getPartCode() + ") không đủ tồn kho. Yêu cầu: " + pr.getQuantity() + ", Hiện có: " + part.getStockQuantity());
+            }
+        }
+    }
 }

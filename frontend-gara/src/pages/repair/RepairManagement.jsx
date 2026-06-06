@@ -47,7 +47,8 @@ export default function RepairManagement() {
       await api.put(`/repair/orders/${orderId}/status`, { status: newStatus });
       fetchOrders();
     } catch (error) {
-      alert('Cập nhật trạng thái thất bại!');
+      const errorMsg = error.response?.data?.message || error.response?.data || 'Cập nhật trạng thái thất bại!';
+      alert(errorMsg);
     } finally {
       setUpdatingId(null);
     }

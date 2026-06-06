@@ -5,17 +5,25 @@ import com.gara.repair_service.entity.RepairPart;
 import com.gara.repair_service.entity.RepairTask;
 import com.gara.repair_service.repository.RepairOrderRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+import com.gara.repair_service.dto.StockCheckRequest;
+import com.gara.repair_service.dto.InventoryDeductEvent;
 
 @Service
 @RequiredArgsConstructor
 public class RepairOrderService {
 
     private final RepairOrderRepository repairOrderRepository;
+    private final RabbitTemplate rabbitTemplate;
+    private final InventoryClient inventoryClient;
 
     public RepairOrder createRepairOrder(RepairOrder order, String creatorUsername){
         // Tự động sinh mã phiếu duy nhất: RO + Năm hiện tại + 8 ký tự mã ngẫu nhiên
@@ -51,11 +59,49 @@ public class RepairOrderService {
     public RepairOrder updateOrderStatus(String id, String status, Long mechanicId) {
         RepairOrder order = repairOrderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu sửa chữa"));
+        
+        boolean isJustCompleted = "COMPLETED".equals(status) && !"COMPLETED".equals(order.getStatus());
+        
+        // --- KIỂM TRA TỒN KHO ĐỒNG BỘ TRƯỚC KHI CHO PHÉP HOÀN THÀNH ---
+        if (isJustCompleted && order.getParts() != null && !order.getParts().isEmpty()) {
+            StockCheckRequest request = new StockCheckRequest();
+            List<StockCheckRequest.PartRequest> partRequests = order.getParts().stream()
+                    .map(p -> new StockCheckRequest.PartRequest(p.getPartId(), p.getQuantity()))
+                    .collect(Collectors.toList());
+            request.setParts(partRequests);
+            
+            try {
+                inventoryClient.checkStock(request);
+            } catch (feign.FeignException.BadRequest e) {
+                // e.contentUTF8() sẽ chứa chuỗi lỗi từ Inventory Service (ví dụ: "Phụ tùng LỐP XE không đủ...")
+                throw new RuntimeException(e.contentUTF8());
+            } catch (Exception e) {
+                throw new RuntimeException("Lỗi kết nối đến kho vật tư để kiểm tra tồn kho. Vui lòng thử lại sau.");
+            }
+        }
+        
         order.setStatus(status);
         if (mechanicId != null) {
             order.setMechanicId(mechanicId);
         }
-        return repairOrderRepository.save(order);
+        
+        RepairOrder savedOrder = repairOrderRepository.save(order);
+
+        // Gửi tin nhắn sang RabbitMQ để trừ kho (Lúc này chắc chắn kho đủ)
+        if (isJustCompleted && savedOrder.getParts() != null && !savedOrder.getParts().isEmpty()) {
+            InventoryDeductEvent event = new InventoryDeductEvent();
+            event.setOrderNumber(savedOrder.getOrderNumber());
+            
+            List<InventoryDeductEvent.PartUsage> usages = savedOrder.getParts().stream()
+                .map(p -> new InventoryDeductEvent.PartUsage(p.getPartId(), p.getQuantity()))
+                .collect(Collectors.toList());
+            
+            event.setUsedParts(usages);
+            rabbitTemplate.convertAndSend("gara.exchange", "repair.completed", event);
+            System.out.println("Đã gửi sự kiện trừ kho cho phiếu: " + savedOrder.getOrderNumber());
+        }
+
+        return savedOrder;
     }
 
     public RepairOrder updateTasksAndParts(String id, List<RepairTask> tasks, List<RepairPart> parts) {

@@ -10,3 +10,8 @@ eureka:
   client:
     service-url:
       defaultZone: http://eureka-service:8761/eureka/
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
