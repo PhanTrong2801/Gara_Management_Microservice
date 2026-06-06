@@ -91,3 +91,12 @@ logging:
   level:
     org.springframework.cloud.gateway: TRACE
     org.springframework.http.server.reactive: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    tags:
+      application: ${spring.application.name}

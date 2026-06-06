@@ -82,6 +82,13 @@ services:
     container_name: eureka-service
     ports:
       - "8761:8761"
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
     networks:
       - gara-network
     healthcheck:
@@ -98,6 +105,13 @@ services:
       - "8081:8081"
     environment:
       - JWT_SECRET=${JWT_SECRET}
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
     networks:
       - gara-network
     depends_on:
@@ -114,6 +128,13 @@ services:
       - "8080:8080"
     environment:
       - JWT_SECRET=${JWT_SECRET}
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
     networks:
       - gara-network
     depends_on:
@@ -129,6 +150,13 @@ services:
     environment: # <--- Bổ sung khối này
       - SPRING_MONGODB_URI=${MONGO_REPAIR_DB_URI}
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
     networks:
       - gara-network
     depends_on:
@@ -148,6 +176,13 @@ services:
     environment:
       # Biến này sẽ đè nát chữ 'localhost' trong file application.yml, ép nó gọi vào container postgres-db
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/customer_vehicle_db
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
     networks:
       - gara-network
     depends_on:
@@ -170,6 +205,13 @@ services:
       # Ép Eureka Client đăng ký thông qua tên container eureka-service
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
     networks:
       - gara-network
     depends_on:
@@ -191,6 +233,13 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
     networks:
       - gara-network
     depends_on:
@@ -198,9 +247,56 @@ services:
         condition: service_healthy
       mysql:
         condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - gara-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - gara-network
+    volumes:
+      - loki-data:/loki
+
+  grafana:
+    image: grafana/grafana-oss:10.4.1
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - gara-network
+    depends_on:
+      - prometheus
+      - loki
+    volumes:
+      - grafana-data:/var/lib/grafana
+
 volumes:
   mysql-data:
   mongo-data:
+  prometheus-data:
+  loki-data:
+  grafana-data:
 
 networks:
   gara-network:
