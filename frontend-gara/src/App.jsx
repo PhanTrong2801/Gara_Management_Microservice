@@ -11,6 +11,7 @@ import RepairManagement from "./pages/repair/RepairManagement.jsx";
 import BillingManagement from "./pages/billing/BillingManagement.jsx";
 import AppointmentManagement from "./pages/repair/AppointmentManagement.jsx";
 import ServiceCatalogManagement from "./pages/repair/ServiceCatalogManagement.jsx";
+import SupplierManagement from "./pages/inventory/SupplierManagement.jsx";
 
 // Customer Portal components
 import CustomerLayout from './layouts/CustomerLayout.jsx';
@@ -42,6 +43,7 @@ function App() {
             <Route index element={<RepairOrderList />} />
             <Route path="create-order" element={<CreateRepairOrder />} />
             <Route path="inventory" element={<InventoryManagement />} />
+            <Route path="suppliers" element={<SupplierManagement />} />
             <Route path="services" element={<ServiceCatalogManagement />} />
             <Route path="admin" element={<AdminDashboard />} />
           </Route>

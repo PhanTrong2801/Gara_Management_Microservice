@@ -2,8 +2,8 @@ package com.gara.inventory_service.service;
 
 import com.gara.inventory_service.config.RabbitMQConfig;
 import com.gara.inventory_service.dto.InventoryDeductEvent;
-import com.gara.inventory_service.entity.Part;
 import com.gara.inventory_service.repository.PartRepository;
+import com.gara.inventory_service.entity.Part;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class InventoryEventListener {
 
     private final PartRepository partRepository;
+    private final InventoryTransactionService transactionService;
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME)
     @Transactional
@@ -31,7 +32,8 @@ public class InventoryEventListener {
             partRepository.findById(usage.getPartId()).ifPresentOrElse(part -> {
                 int newStock = part.getStockQuantity() - usage.getQuantity();
                 part.setStockQuantity(newStock);
-                partRepository.save(part);
+                Part savedPart = partRepository.save(part);
+                transactionService.recordTransaction(savedPart, "EXPORT_REPAIR", -usage.getQuantity(), event.getOrderNumber());
                 
                 if (newStock < 0) {
                     log.warn("CẢNH BÁO: Phụ tùng {} ({}) bị âm kho! Số lượng hiện tại: {}", 

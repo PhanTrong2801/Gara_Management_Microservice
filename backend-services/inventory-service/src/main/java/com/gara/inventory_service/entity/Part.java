@@ -28,4 +28,11 @@ public class Part {
 
     @Column(nullable = false)
     private Integer stockQuantity; // Số lượng tồn kho hiện tại (Cực kỳ quan trọng)
+
+    @Column(name = "min_stock_level", nullable = false)
+    private Integer minStockLevel = 5; // Mức tồn kho tối thiểu để cảnh báo
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier; // Nhà cung cấp
 }

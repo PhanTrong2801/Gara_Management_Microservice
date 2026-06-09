@@ -114,9 +114,14 @@ export default function AdminDashboard() {
           <h2 className="text-2xl font-bold text-gray-800">Tổng Quan Quản Trị</h2>
           <p className="text-sm text-gray-500 mt-1">Dành riêng cho Quản lý và Giám đốc hệ thống</p>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg shadow hover:bg-blue-700 transition-colors">
-          Xuất Báo Cáo
-        </button>
+        <div className="flex gap-3">
+          <button onClick={() => window.location.href = '/dashboard/suppliers'} className="px-4 py-2 bg-emerald-50 text-emerald-600 font-medium rounded-lg shadow-sm hover:bg-emerald-100 transition-colors">
+            Nhà cung cấp & Nhập hàng
+          </button>
+          <button className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg shadow hover:bg-blue-700 transition-colors">
+            Xuất Báo Cáo
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}

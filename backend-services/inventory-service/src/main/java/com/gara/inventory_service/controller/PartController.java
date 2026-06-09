@@ -10,21 +10,53 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import com.gara.inventory_service.service.InventoryTransactionService;
+import com.gara.inventory_service.dto.InventoryTransactionDTO;
+
 @RestController
 @RequestMapping("/api/inventory/parts")
 @RequiredArgsConstructor
 public class PartController {
 
     private final PartService partService;
+    private final InventoryTransactionService transactionService;
 
     @PostMapping
-    public ResponseEntity<Part> createPart(@Valid @RequestBody PartDTO dto) {
-        return ResponseEntity.ok(partService.createPart(dto));
+    public ResponseEntity<?> createPart(@Valid @RequestBody PartDTO dto) {
+        try {
+            return ResponseEntity.ok(partService.createPart(dto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updatePart(@PathVariable Long id, @Valid @RequestBody PartDTO dto) {
+        try {
+            return ResponseEntity.ok(partService.updatePart(id, dto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deletePart(@PathVariable Long id) {
+        try {
+            partService.deletePart(id);
+            return ResponseEntity.ok(java.util.Map.of("message", "Đã xóa phụ tùng thành công!"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+        }
     }
 
     @GetMapping
     public ResponseEntity<List<Part>> getAllParts() {
         return ResponseEntity.ok(partService.getAllParts());
+    }
+
+    @GetMapping("/low-stock")
+    public ResponseEntity<List<Part>> getLowStockParts() {
+        return ResponseEntity.ok(partService.getLowStockParts());
     }
 
     @GetMapping("/{id}")
@@ -38,8 +70,15 @@ public class PartController {
     @PatchMapping("/{id}/stock")
     public ResponseEntity<Part> updateStock(
             @PathVariable Long id,
-            @RequestParam int quantityChange) {
-        return ResponseEntity.ok(partService.updateStock(id, quantityChange));
+            @RequestParam int quantityChange,
+            @RequestParam(required = false, defaultValue = "MANUAL_ADJUST") String reference) {
+        String type = quantityChange > 0 ? "MANUAL_ADJUST (NHẬP)" : "MANUAL_ADJUST (XUẤT)";
+        return ResponseEntity.ok(partService.updateStock(id, quantityChange, type, reference));
+    }
+
+    @GetMapping("/{id}/transactions")
+    public ResponseEntity<List<InventoryTransactionDTO>> getTransactions(@PathVariable Long id) {
+        return ResponseEntity.ok(transactionService.getTransactionsByPartId(id));
     }
 
     @PostMapping("/check-stock")

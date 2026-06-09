@@ -23,4 +23,10 @@ public class PartDTO {
     @NotNull(message = "Số lượng tồn kho không được để trống")
     @Min(value = 0, message = "Số lượng tồn kho không được âm")
     private Integer stockQuantity;
+
+    @Min(value = 0, message = "Mức tồn kho tối thiểu không được âm")
+    private Integer minStockLevel = 5;
+
+    @NotNull(message = "ID nhà cung cấp không được để trống")
+    private Long supplierId;
 }
