@@ -49,6 +49,8 @@ services:
       POSTGRES_DB: customer_vehicle_db
     ports:
       - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - gara-network
     healthcheck:
@@ -297,6 +299,7 @@ volumes:
   prometheus-data:
   loki-data:
   grafana-data:
+  postgres-data:
 
 networks:
   gara-network:

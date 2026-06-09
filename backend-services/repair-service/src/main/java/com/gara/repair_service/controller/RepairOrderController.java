@@ -67,4 +67,20 @@ public class RepairOrderController {
     ){
         return ResponseEntity.ok(repairOrderService.updateTasksAndParts(id, details.getTasks(), details.getParts()));
     }
+
+    // API dành cho thợ máy cập nhật trạng thái của từng công việc
+    @PutMapping("/orders/{id}/tasks/{taskIndex}")
+    public ResponseEntity<?> updateTaskStatus(
+            @PathVariable String id,
+            @PathVariable int taskIndex,
+            @RequestBody java.util.Map<String, String> body
+    ) {
+        try {
+            String status = body.get("status");
+            String note = body.get("mechanicNote");
+            return ResponseEntity.ok(repairOrderService.updateRepairTask(id, taskIndex, status, note));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

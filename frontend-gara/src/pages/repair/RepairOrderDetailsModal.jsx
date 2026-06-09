@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Save, PenTool } from 'lucide-react';
+import { X, Plus, Trash2, Save, PenTool, CheckCircle } from 'lucide-react';
 import api from '../../api/axiosConfig';
 
 export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSaveSuccess }) {
@@ -136,35 +136,51 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
                 <p className="text-sm text-gray-400 italic">Chưa có công việc nào được thêm.</p>
               ) : (
                 tasks.map((task, idx) => (
-                  <div key={idx} className="flex gap-4 items-center bg-gray-50 p-3 rounded-lg">
-                    {/* Luôn dùng Dropdown cho Tên dịch vụ (tránh nhập tự do) */}
-                    <select 
-                      className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={task.serviceCatalogId || ''}
-                      onChange={(e) => handleUpdateTask(idx, 'serviceCatalogId', e.target.value)}
-                    >
-                      <option value="">-- Chọn dịch vụ --</option>
-                      {availableServices.map(svc => (
-                        <option key={svc.id} value={svc.id}>
-                          {svc.name} {!isMechanic && `- ${svc.defaultCost.toLocaleString()} VNĐ`}
-                        </option>
-                      ))}
-                    </select>
+                  <div key={idx} className="flex flex-col gap-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div className="flex gap-4 items-center">
+                      {/* Luôn dùng Dropdown cho Tên dịch vụ (tránh nhập tự do) */}
+                      <select 
+                        className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={task.serviceCatalogId || ''}
+                        onChange={(e) => handleUpdateTask(idx, 'serviceCatalogId', e.target.value)}
+                      >
+                        <option value="">-- Chọn dịch vụ --</option>
+                        {availableServices.map(svc => (
+                          <option key={svc.id} value={svc.id}>
+                            {svc.name} {!isMechanic && `- ${svc.defaultCost.toLocaleString()} VNĐ`}
+                          </option>
+                        ))}
+                      </select>
 
-                    {/* Chỉ Admin/Manager/Receptionist mới thấy giá và sửa giá */}
-                    {!isMechanic && (
-                      <input 
-                        type="number" 
-                        placeholder="Tiền công (VNĐ)"
-                        className="w-40 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={task.cost}
-                        onChange={(e) => handleUpdateTask(idx, 'cost', Number(e.target.value))}
-                      />
+                      {/* Chỉ Admin/Manager/Receptionist mới thấy giá và sửa giá */}
+                      {!isMechanic && (
+                        <input 
+                          type="number" 
+                          placeholder="Tiền công (VNĐ)"
+                          className="w-40 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={task.cost}
+                          onChange={(e) => handleUpdateTask(idx, 'cost', Number(e.target.value))}
+                        />
+                      )}
+
+                      <button onClick={() => handleRemoveTask(idx)} className="text-red-500 hover:text-red-700 p-2">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Hiển thị Ghi chú thợ và Trạng thái cho Manager */}
+                    {!isMechanic && (task.mechanicNote || task.status) && (
+                      <div className="flex items-center gap-2 pl-1 mt-1 text-sm">
+                        {task.status === 'DONE' ? (
+                            <span className="text-green-600 font-medium flex items-center bg-green-100 px-2 py-0.5 rounded text-xs"><CheckCircle className="w-3 h-3 mr-1"/> Xong</span>
+                        ) : (
+                            <span className="text-orange-600 font-medium flex items-center bg-orange-100 px-2 py-0.5 rounded text-xs">Đang chờ</span>
+                        )}
+                        {task.mechanicNote && (
+                            <span className="text-gray-600 italic border-l-2 border-purple-300 pl-2">Thợ nhắn: <span className="font-medium text-purple-700">{task.mechanicNote}</span></span>
+                        )}
+                      </div>
                     )}
-
-                    <button onClick={() => handleRemoveTask(idx)} className="text-red-500 hover:text-red-700 p-2">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
                 ))
               )}
@@ -196,7 +212,7 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
                       <option value="">-- Chọn phụ tùng từ kho --</option>
                       {availableParts.map(ap => (
                         <option key={ap.id} value={ap.id}>
-                          {ap.name} - Tồn: {ap.quantity} cái {!isMechanic && `- Giá: ${ap.price.toLocaleString()} VNĐ`}
+                          {ap.name} - Tồn: {ap.stockQuantity} cái {!isMechanic && `- Giá: ${ap.price.toLocaleString()} VNĐ`}
                         </option>
                       ))}
                     </select>

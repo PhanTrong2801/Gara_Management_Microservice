@@ -10,6 +10,9 @@ const AppointmentManagement = () => {
     const [customersMap, setCustomersMap] = useState({});
     const navigate = useNavigate();
 
+    const role = localStorage.getItem('role') || '';
+    const canCreateOrder = ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'].includes(role.toUpperCase());
+
     const fetchAppointments = async () => {
         try {
             setLoading(true);
@@ -169,7 +172,7 @@ const AppointmentManagement = () => {
                                                         </button>
                                                     </>
                                                 )}
-                                                {appt.status === 'CONFIRMED' && (
+                                                {appt.status === 'CONFIRMED' && canCreateOrder && (
                                                     <button 
                                                         onClick={() => handleCreateRepairOrder(appt)}
                                                         className="text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-md text-sm font-medium transition flex items-center justify-center ml-auto"

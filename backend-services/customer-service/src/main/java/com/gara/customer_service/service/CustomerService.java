@@ -84,7 +84,15 @@ public class CustomerService {
 
     public Customer getCustomerByUserId(Long userId){
         return customerRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng ứng với userId: "+userId));
+                .orElseGet(() -> {
+                    // Tự động tạo profile rỗng nếu user tồn tại bên Auth mà bên Customer bị mất data (Data Sync Issue)
+                    Customer newCust = new Customer();
+                    newCust.setUserId(userId);
+                    newCust.setFullName("Người dùng mới");
+                    newCust.setPhoneNumber("N/A");
+                    newCust.setEmail("N/A");
+                    return customerRepository.save(newCust);
+                });
     }
 
     // 4. Lấy tất cả khách hàng

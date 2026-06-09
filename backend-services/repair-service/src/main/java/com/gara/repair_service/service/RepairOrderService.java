@@ -117,4 +117,24 @@ public class RepairOrderService {
         
         return repairOrderRepository.save(order);
     }
+
+    public RepairOrder updateRepairTask(String orderId, int taskIndex, String status, String note) {
+        RepairOrder order = repairOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu sửa chữa"));
+        
+        List<RepairTask> tasks = order.getTasks();
+        if (tasks == null || taskIndex < 0 || taskIndex >= tasks.size()) {
+            throw new RuntimeException("Hạng mục công việc không hợp lệ");
+        }
+        
+        RepairTask task = tasks.get(taskIndex);
+        if (status != null) {
+            task.setStatus(status);
+        }
+        if (note != null) {
+            task.setMechanicNote(note);
+        }
+        
+        return repairOrderRepository.save(order);
+    }
 }
