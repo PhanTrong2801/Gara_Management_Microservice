@@ -13,6 +13,7 @@ import AppointmentManagement from "./pages/repair/AppointmentManagement.jsx";
 import ServiceCatalogManagement from "./pages/repair/ServiceCatalogManagement.jsx";
 import SupplierManagement from "./pages/inventory/SupplierManagement.jsx";
 import MechanicDashboard from "./pages/repair/MechanicDashboard.jsx";
+import VNPayReturn from "./pages/billing/VNPayReturn.jsx";
 
 // Customer Portal components
 import CustomerLayout from './layouts/CustomerLayout.jsx';
@@ -29,6 +30,9 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
 
         <Route path="/login" element={<LoginPage />} />
+        
+        {/* Callback từ VNPay */}
+        <Route path="/vnpay-return" element={<VNPayReturn />} />
 
         {/* Nhóm các trang nằm gọn bên trong Dashboard Layout */}
         <Route path="/dashboard" element={<DashboardLayout />}>
