@@ -1,5 +1,5 @@
 import {Link, Outlet, useLocation} from 'react-router-dom';
-import { ClipboardList, Wrench, CreditCard, Users, Settings, HelpCircle, PlusCircle, Package, LogOut, Calendar } from 'lucide-react';
+import { ClipboardList, Wrench, CreditCard, Users, Settings, HelpCircle, PlusCircle, Package, LogOut, Calendar, Clock } from 'lucide-react';
 
 export default function DashboardLayout() {
   const role = localStorage.getItem('role');
@@ -29,6 +29,7 @@ export default function DashboardLayout() {
     { path: '/dashboard/repairs', label: 'Quản lý Sửa chữa', icon: <Wrench className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
     { path: '/dashboard/mechanic/tasks', label: 'Trạm Sửa Chữa', icon: <Wrench className="w-5 h-5 mr-3" />, roles: ['ROLE_MECHANIC', 'MECHANIC'] },
     { path: '/dashboard/billing', label: 'Thanh toán', icon: <CreditCard className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_RECEPTIONIST', 'RECEPTIONIST'] },
+    { path: '/dashboard/hr/shifts', label: 'Quản lý Ca làm', icon: <Clock className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
   ];
 
   const menuItems = menuConfig.filter(item => item.roles.includes(userRole));
