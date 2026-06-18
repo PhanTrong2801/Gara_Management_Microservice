@@ -5,6 +5,7 @@ import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/manager/manager_dashboard.dart';
 import 'screens/mechanic/mechanic_dashboard.dart';
+import 'screens/customer/customer_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,6 +83,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
         return const ManagerDashboard();
       } else if (user.role == 'MECHANIC' || user.role == 'ROLE_MECHANIC') {
         return const MechanicDashboard();
+      } else if (user.role == 'CUSTOMER' || user.role == 'ROLE_CUSTOMER') {
+        return const CustomerDashboard();
       }
     }
 

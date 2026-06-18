@@ -27,6 +27,29 @@ class RepairTaskModel {
   }
 }
 
+class RepairPartModel {
+  final int partId;
+  final String partName;
+  final int quantity;
+  final double unitPrice;
+
+  RepairPartModel({
+    required this.partId,
+    required this.partName,
+    required this.quantity,
+    required this.unitPrice,
+  });
+
+  factory RepairPartModel.fromJson(Map<String, dynamic> json) {
+    return RepairPartModel(
+      partId: json['partId'] ?? 0,
+      partName: json['partName'] ?? '',
+      quantity: json['quantity'] ?? 0,
+      unitPrice: (json['unitPrice'] ?? 0.0).toDouble(),
+    );
+  }
+}
+
 class RepairOrderModel {
   final String id;
   final String orderNumber;
@@ -37,6 +60,7 @@ class RepairOrderModel {
   final int? mechanicId;
   final String createdBy;
   final List<RepairTaskModel> tasks;
+  final List<RepairPartModel> parts;
 
   RepairOrderModel({
     required this.id,
@@ -48,10 +72,12 @@ class RepairOrderModel {
     this.mechanicId,
     required this.createdBy,
     required this.tasks,
+    required this.parts,
   });
 
   factory RepairOrderModel.fromJson(Map<String, dynamic> json) {
     var tasksList = json['tasks'] as List? ?? [];
+    var partsList = json['parts'] as List? ?? [];
     return RepairOrderModel(
       id: json['id'] ?? '',
       orderNumber: json['orderNumber'] ?? '',
@@ -62,6 +88,7 @@ class RepairOrderModel {
       mechanicId: json['mechanicId'],
       createdBy: json['createdBy'] ?? '',
       tasks: tasksList.map((t) => RepairTaskModel.fromJson(t)).toList(),
+      parts: partsList.map((p) => RepairPartModel.fromJson(p)).toList(),
     );
   }
 }
