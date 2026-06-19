@@ -1,10 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Clock, MoreVertical, AlertCircle } from 'lucide-react';
+import { Clock, MoreVertical, AlertCircle, Search } from 'lucide-react';
 import api from '../../api/axiosConfig';
+import { useTablePagination } from '../../hooks/useTablePagination';
+import Pagination from '../../components/common/Pagination';
 
 export default function RepairOrderList() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const {
+        currentData: currentOrders,
+        currentPage,
+        totalPages,
+        searchTerm,
+        setSearchTerm,
+        handlePageChange,
+        totalItems
+    } = useTablePagination(orders, (order, term) => 
+        order.orderNumber?.toLowerCase().includes(term) ||
+        order.carId?.toString().toLowerCase().includes(term) ||
+        order.customerId?.toString().toLowerCase().includes(term)
+    );
 
     // Hook này tự động chạy 1 lần khi màn hình vừa hiển thị lên
     useEffect(() => {
@@ -27,9 +43,21 @@ export default function RepairOrderList() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
                 <h2 className="text-lg font-bold text-gray-800">Xe đang trong khu vực tiếp nhận</h2>
-                <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
-          Tổng cộng: {orders.length} xe
-        </span>
+                <div className="flex items-center gap-4">
+                    <div className="relative">
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input 
+                            type="text" 
+                            placeholder="Tìm kiếm phiếu / mã xe / khách hàng..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 pr-4 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                        />
+                    </div>
+                    <span className="px-3 py-1 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">
+                        Tổng cộng: {orders.length} xe
+                    </span>
+                </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -45,7 +73,7 @@ export default function RepairOrderList() {
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                    {orders.length === 0 ? (
+                    {currentOrders.length === 0 ? (
                         <tr>
                             <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                                 <AlertCircle className="w-8 h-8 mx-auto text-gray-300 mb-3" />
@@ -53,7 +81,7 @@ export default function RepairOrderList() {
                             </td>
                         </tr>
                     ) : (
-                        orders.map((order) => (
+                        currentOrders.map((order) => (
                             <tr key={order.id} className="hover:bg-gray-50/80 transition-colors">
                                 {/* Cột Trạng thái */}
                                 <td className="px-6 py-4">
@@ -106,6 +134,12 @@ export default function RepairOrderList() {
                     </tbody>
                 </table>
             </div>
+            <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                totalItems={totalItems} 
+                onPageChange={handlePageChange} 
+            />
         </div>
     );
 }

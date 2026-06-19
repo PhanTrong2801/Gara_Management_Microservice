@@ -37,6 +37,20 @@ public class ScheduleService {
         return mapToShiftDto(shiftRepository.save(shift));
     }
 
+    public ShiftDto updateShift(Long id, ShiftDto shiftDto) {
+        Shift shift = shiftRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Shift not found"));
+        shift.setShiftName(shiftDto.getShiftName());
+        shift.setStartTime(shiftDto.getStartTime());
+        shift.setEndTime(shiftDto.getEndTime());
+        shift.setDescription(shiftDto.getDescription());
+        return mapToShiftDto(shiftRepository.save(shift));
+    }
+
+    public void deleteShift(Long id) {
+        shiftRepository.deleteById(id);
+    }
+
     // --- Schedule Management ---
     public List<EmployeeScheduleDto> getSchedulesBetween(LocalDate startDate, LocalDate endDate) {
         return scheduleRepository.findByWorkDateBetween(startDate, endDate)

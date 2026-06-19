@@ -1,15 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Plus, Edit, Trash2, Search, Save, X } from 'lucide-react';
 import api from '../../api/axiosConfig';
+import { useTablePagination } from '../../hooks/useTablePagination';
+import Pagination from '../../components/common/Pagination';
 
 export default function ServiceCatalogManagement() {
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentService, setCurrentService] = useState({ name: '', defaultCost: 0, description: '' });
     const [isEditing, setIsEditing] = useState(false);
+
+    const {
+        currentData: currentServices,
+        currentPage,
+        totalPages,
+        searchTerm,
+        setSearchTerm,
+        handlePageChange,
+        totalItems
+    } = useTablePagination(services, (s, term) => 
+        s.name.toLowerCase().includes(term)
+    );
 
     const fetchServices = async () => {
         try {
@@ -65,9 +78,6 @@ export default function ServiceCatalogManagement() {
         }
     };
 
-    const filteredServices = services.filter(s => 
-        s.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     return (
         <div className="p-6">
@@ -112,10 +122,10 @@ export default function ServiceCatalogManagement() {
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
                                 <tr><td colSpan="4" className="text-center py-8">Đang tải...</td></tr>
-                            ) : filteredServices.length === 0 ? (
+                            ) : currentServices.length === 0 ? (
                                 <tr><td colSpan="4" className="text-center py-8 text-slate-500">Không có dữ liệu</td></tr>
                             ) : (
-                                filteredServices.map(s => (
+                                currentServices.map(s => (
                                     <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 font-semibold text-slate-800">{s.name}</td>
                                         <td className="px-6 py-4 text-sm text-slate-600">{s.description || '-'}</td>
@@ -134,6 +144,12 @@ export default function ServiceCatalogManagement() {
                         </tbody>
                     </table>
                 </div>
+                <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages} 
+                    totalItems={totalItems} 
+                    onPageChange={handlePageChange} 
+                />
             </div>
 
             {/* Modal */}

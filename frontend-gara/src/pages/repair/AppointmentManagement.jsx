@@ -2,13 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, CheckCircle, XCircle, Search, Clock, FileText } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useTablePagination } from '../../hooks/useTablePagination';
+import Pagination from '../../components/common/Pagination';
 
 const AppointmentManagement = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
     const [customersMap, setCustomersMap] = useState({});
     const navigate = useNavigate();
+
+    const {
+        currentData: currentAppointments,
+        currentPage,
+        totalPages,
+        searchTerm,
+        setSearchTerm,
+        handlePageChange,
+        totalItems
+    } = useTablePagination(appointments, (appt, term) => {
+        const customer = customersMap[appt.customerId] || {};
+        const searchStr = `${customer.fullName} ${customer.phoneNumber} ${appt.description}`.toLowerCase();
+        return searchStr.includes(term);
+    });
 
     const role = localStorage.getItem('role') || '';
     const canCreateOrder = ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'].includes(role.toUpperCase());
@@ -85,11 +100,7 @@ const AppointmentManagement = () => {
         }
     };
 
-    const filteredAppointments = appointments.filter(appt => {
-        const customer = customersMap[appt.customerId] || {};
-        const searchStr = `${customer.fullName} ${customer.phoneNumber} ${appt.description}`.toLowerCase();
-        return searchStr.includes(searchTerm.toLowerCase());
-    });
+
 
     if (loading) return <div className="p-8 text-center text-slate-500 font-medium">Đang tải dữ liệu...</div>;
 
@@ -128,14 +139,14 @@ const AppointmentManagement = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filteredAppointments.length === 0 ? (
+                            {currentAppointments.length === 0 ? (
                                 <tr>
                                     <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
                                         Không tìm thấy lịch hẹn nào.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredAppointments.map((appt) => {
+                                currentAppointments.map((appt) => {
                                     const customer = customersMap[appt.customerId] || {};
                                     return (
                                         <tr key={appt.id} className="hover:bg-slate-50 transition-colors">
@@ -191,6 +202,12 @@ const AppointmentManagement = () => {
                         </tbody>
                     </table>
                 </div>
+                <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages} 
+                    totalItems={totalItems} 
+                    onPageChange={handlePageChange} 
+                />
             </div>
         </div>
     );

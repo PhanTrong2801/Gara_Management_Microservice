@@ -29,6 +29,17 @@ public class ScheduleController {
         return ResponseEntity.ok(scheduleService.createShift(dto));
     }
 
+    @PutMapping("/shifts/{id}")
+    public ResponseEntity<ShiftDto> updateShift(@PathVariable Long id, @RequestBody ShiftDto dto) {
+        return ResponseEntity.ok(scheduleService.updateShift(id, dto));
+    }
+
+    @DeleteMapping("/shifts/{id}")
+    public ResponseEntity<Void> deleteShift(@PathVariable Long id) {
+        scheduleService.deleteShift(id);
+        return ResponseEntity.ok().build();
+    }
+
     // --- Schedule API ---
     @GetMapping
     public ResponseEntity<List<EmployeeScheduleDto>> getSchedules(

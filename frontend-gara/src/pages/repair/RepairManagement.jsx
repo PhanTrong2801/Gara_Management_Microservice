@@ -3,6 +3,9 @@ import { Clock, Wrench, CheckCircle, AlertTriangle, Play, ChevronDown, Search, E
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axiosConfig';
 import RepairOrderDetailsModal from './RepairOrderDetailsModal';
+import { useTablePagination } from '../../hooks/useTablePagination';
+import Pagination from '../../components/common/Pagination';
+import { useMemo } from 'react';
 
 const STATUS_CONFIG = {
   PENDING:    { label: 'Chờ xử lý',    color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
@@ -19,7 +22,6 @@ export default function RepairManagement() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('ALL');
-  const [searchTerm, setSearchTerm] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
   
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -33,7 +35,8 @@ export default function RepairManagement() {
     try {
       setLoading(true);
       const response = await api.get('/repair/orders');
-      setOrders(response.data);
+      const sortedData = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setOrders(sortedData);
     } catch (error) {
       console.error("Lỗi khi tải danh sách:", error);
     } finally {
@@ -74,12 +77,22 @@ export default function RepairManagement() {
     return null;
   };
 
-  const filteredOrders = orders.filter(order => {
-    const matchStatus = filterStatus === 'ALL' || order.status === filterStatus;
-    const matchSearch = searchTerm === '' || 
-      order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.createdBy?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchStatus && matchSearch;
+  const statusFilteredOrders = useMemo(() => {
+    if (filterStatus === 'ALL') return orders;
+    return orders.filter(o => o.status === filterStatus);
+  }, [orders, filterStatus]);
+
+  const {
+      currentData: currentOrders,
+      currentPage,
+      totalPages,
+      searchTerm,
+      setSearchTerm,
+      handlePageChange,
+      totalItems
+  } = useTablePagination(statusFilteredOrders, (order, term) => {
+      return order.orderNumber?.toLowerCase().includes(term) ||
+             order.createdBy?.toLowerCase().includes(term);
   });
 
   // Count by status
@@ -137,7 +150,7 @@ export default function RepairManagement() {
           </button>
         )}
         <span className="text-sm text-gray-500 ml-auto">
-          Hiển thị {filteredOrders.length} / {orders.length} phiếu
+          Hiển thị {totalItems} / {orders.length} phiếu
         </span>
       </div>
 
@@ -155,17 +168,17 @@ export default function RepairManagement() {
                 <th className="px-6 py-4 text-center">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filteredOrders.length === 0 ? (
+            <tbody className="divide-y divide-gray-100">
+              {currentOrders.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-400">
+                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                     <AlertTriangle className="w-8 h-8 mx-auto text-gray-300 mb-3" />
-                    {filterStatus !== 'ALL' ? 'Không có phiếu nào ở trạng thái này.' : 'Chưa có phiếu sửa chữa nào.'}
+                    Không tìm thấy phiếu sửa chữa nào.
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => {
-                  const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
+                currentOrders.map(order => {
+                  const config = STATUS_CONFIG[order.status] || { label: order.status, color: 'bg-gray-100 text-gray-800', dot: 'bg-gray-500' };
                   const nextStatus = getNextStatus(order.status);
                   const nextConfig = nextStatus ? STATUS_CONFIG[nextStatus] : null;
 
@@ -255,6 +268,12 @@ export default function RepairManagement() {
             </tbody>
           </table>
         </div>
+        <Pagination 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            totalItems={totalItems} 
+            onPageChange={handlePageChange} 
+        />
       </div>
 
       {/* Modal Chi tiết */}

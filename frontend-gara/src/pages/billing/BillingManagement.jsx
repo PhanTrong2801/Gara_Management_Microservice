@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CreditCard, Search, FileText, CheckCircle, Clock, Eye } from 'lucide-react';
 import api from '../../api/axiosConfig';
 import InvoiceDetailsModal from './InvoiceDetailsModal';
+import { useTablePagination } from '../../hooks/useTablePagination';
+import Pagination from '../../components/common/Pagination';
 
 export default function BillingManagement() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   
   // State cho Modal Hóa đơn
@@ -45,12 +46,22 @@ export default function BillingManagement() {
     fetchInvoices();
   };
 
-  const filteredInvoices = invoices.filter(inv => {
-    const matchStatus = filterStatus === 'ALL' || inv.status === filterStatus;
-    const matchSearch = searchTerm === '' || 
-      inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.repairOrderNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchStatus && matchSearch;
+  const statusFilteredInvoices = useMemo(() => {
+    if (filterStatus === 'ALL') return invoices;
+    return invoices.filter(i => i.status === filterStatus);
+  }, [invoices, filterStatus]);
+
+  const {
+      currentData: currentInvoices,
+      currentPage,
+      totalPages,
+      searchTerm,
+      setSearchTerm,
+      handlePageChange,
+      totalItems
+  } = useTablePagination(statusFilteredInvoices, (inv, term) => {
+      return inv.invoiceNumber.toLowerCase().includes(term) ||
+             inv.repairOrderNumber.toLowerCase().includes(term);
   });
 
   if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Đang đồng bộ dữ liệu hóa đơn...</div>;
@@ -128,10 +139,10 @@ export default function BillingManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {filteredInvoices.length === 0 ? (
+            {currentInvoices.length === 0 ? (
               <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-400">Không có hóa đơn nào.</td></tr>
             ) : (
-              filteredInvoices.map((inv) => (
+              currentInvoices.map((inv) => (
                 <tr key={inv.id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4 font-semibold text-gray-800">{inv.invoiceNumber}</td>
                   <td className="px-6 py-4 text-gray-600">{inv.repairOrderNumber}</td>
@@ -171,6 +182,12 @@ export default function BillingManagement() {
           </tbody>
         </table>
       </div>
+      <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          totalItems={totalItems} 
+          onPageChange={handlePageChange} 
+      />
 
       {/* Modal Xem chi tiết và In hóa đơn */}
       <InvoiceDetailsModal 

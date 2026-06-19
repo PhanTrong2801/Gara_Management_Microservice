@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Truck, Plus, X, ShoppingCart, Check, ListChecks } from 'lucide-react';
+import { Truck, Plus, X, ShoppingCart, Check, ListChecks, Search } from 'lucide-react';
 import api from '../../api/axiosConfig';
+import { useTablePagination } from '../../hooks/useTablePagination';
+import Pagination from '../../components/common/Pagination';
 
 export default function SupplierManagement() {
     const [suppliers, setSuppliers] = useState([]);
@@ -20,6 +22,15 @@ export default function SupplierManagement() {
     const [selectedPartId, setSelectedPartId] = useState('');
     const [quantity, setQuantity] = useState('');
     const [unitPrice, setUnitPrice] = useState('');
+
+    const supplierTable = useTablePagination(suppliers, (s, term) => 
+        s.name.toLowerCase().includes(term) || (s.contactPhone && s.contactPhone.includes(term))
+    );
+
+    const orderTable = useTablePagination(purchaseOrders, (po, term) => 
+        (po.supplier?.name && po.supplier.name.toLowerCase().includes(term)) || 
+        po.id.toString().includes(term)
+    );
 
     useEffect(() => {
         fetchSuppliers();
@@ -166,7 +177,20 @@ export default function SupplierManagement() {
 
             {/* Tab: Danh sách NCC */}
             {activeTab === 'suppliers' && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                        <div className="relative w-full md:w-1/3">
+                            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input 
+                                type="text" 
+                                placeholder="Tìm kiếm tên NCC hoặc SĐT..." 
+                                value={supplierTable.searchTerm}
+                                onChange={(e) => supplierTable.setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow text-sm"
+                            />
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <table className="w-full text-left text-sm text-gray-600">
                         <thead className="bg-gray-50/50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
                             <tr>
@@ -178,7 +202,7 @@ export default function SupplierManagement() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {suppliers.map(s => (
+                            {supplierTable.currentData.map(s => (
                                 <tr key={s.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 font-semibold text-gray-900">#{s.id}</td>
                                     <td className="px-6 py-4 font-medium text-blue-700">{s.name}</td>
@@ -187,17 +211,37 @@ export default function SupplierManagement() {
                                     <td className="px-6 py-4">{s.address}</td>
                                 </tr>
                             ))}
-                            {suppliers.length === 0 && (
+                            {supplierTable.currentData.length === 0 && (
                                 <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu</td></tr>
                             )}
                         </tbody>
                     </table>
+                    <Pagination 
+                        currentPage={supplierTable.currentPage} 
+                        totalPages={supplierTable.totalPages} 
+                        totalItems={supplierTable.totalItems} 
+                        onPageChange={supplierTable.handlePageChange} 
+                    />
+                </div>
                 </div>
             )}
 
             {/* Tab: Phiếu Nhập */}
             {activeTab === 'orders' && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                        <div className="relative w-full md:w-1/3">
+                            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input 
+                                type="text" 
+                                placeholder="Tìm kiếm theo tên NCC hoặc mã phiếu..." 
+                                value={orderTable.searchTerm}
+                                onChange={(e) => orderTable.setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow text-sm"
+                            />
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <table className="w-full text-left text-sm text-gray-600">
                         <thead className="bg-gray-50/50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
                             <tr>
@@ -210,7 +254,7 @@ export default function SupplierManagement() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {purchaseOrders.map(po => (
+                            {orderTable.currentData.map(po => (
                                 <tr key={po.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 font-bold text-gray-900">PO-{po.id}</td>
                                     <td className="px-6 py-4 font-medium text-gray-800">{po.supplier?.name}</td>
@@ -235,11 +279,18 @@ export default function SupplierManagement() {
                                     </td>
                                 </tr>
                             ))}
-                            {purchaseOrders.length === 0 && (
+                            {orderTable.currentData.length === 0 && (
                                 <tr><td colSpan="6" className="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu</td></tr>
                             )}
                         </tbody>
                     </table>
+                    <Pagination 
+                        currentPage={orderTable.currentPage} 
+                        totalPages={orderTable.totalPages} 
+                        totalItems={orderTable.totalItems} 
+                        onPageChange={orderTable.handlePageChange} 
+                    />
+                </div>
                 </div>
             )}
 

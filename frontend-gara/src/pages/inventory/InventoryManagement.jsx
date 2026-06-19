@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, ArrowUpRight, ArrowDownRight, X, AlertCircle, Edit, Trash2, History } from 'lucide-react';
+import { Package, Plus, ArrowUpRight, ArrowDownRight, X, AlertCircle, Edit, Trash2, History, Search } from 'lucide-react';
 import api from '../../api/axiosConfig';
+import { useTablePagination } from '../../hooks/useTablePagination';
+import Pagination from '../../components/common/Pagination';
 
 export default function InventoryManagement() {
     const [parts, setParts] = useState([]);
@@ -30,6 +32,19 @@ export default function InventoryManagement() {
     const [historyLoading, setHistoryLoading] = useState(false);
 
     const [error, setError] = useState('');
+
+    const {
+        currentData: currentParts,
+        currentPage,
+        totalPages,
+        searchTerm,
+        setSearchTerm,
+        handlePageChange,
+        totalItems
+    } = useTablePagination(parts, (part, term) => 
+        part.partCode.toLowerCase().includes(term) || 
+        part.name.toLowerCase().includes(term)
+    );
 
     // Tải danh sách phụ tùng
     const fetchParts = async () => {
@@ -190,6 +205,20 @@ export default function InventoryManagement() {
                 </div>
             )}
 
+            {/* Thanh Tìm kiếm */}
+            <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div className="relative w-full md:w-1/3">
+                    <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input 
+                        type="text" 
+                        placeholder="Tìm kiếm mã vật tư hoặc tên..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow text-sm"
+                    />
+                </div>
+            </div>
+
             {/* Bảng dữ liệu Kho */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
@@ -204,7 +233,7 @@ export default function InventoryManagement() {
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                        {parts.length === 0 ? (
+                        {currentParts.length === 0 ? (
                             <tr>
                                 <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                                     <AlertCircle className="w-8 h-8 mx-auto text-gray-300 mb-3" />
@@ -212,7 +241,7 @@ export default function InventoryManagement() {
                                 </td>
                             </tr>
                         ) : (
-                            parts.map((part) => (
+                            currentParts.map((part) => (
                                 <tr key={part.id} className="hover:bg-gray-50/80 transition-colors">
                                     <td className="px-6 py-4 font-semibold text-gray-900">{part.partCode}</td>
                                     <td className="px-6 py-4">
@@ -283,6 +312,12 @@ export default function InventoryManagement() {
                         </tbody>
                     </table>
                 </div>
+                <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages} 
+                    totalItems={totalItems} 
+                    onPageChange={handlePageChange} 
+                />
             </div>
 
             {/* MODAL 1: THÊM MÃ VẬT TƯ MỚI */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../api/axiosConfig';
-import { Plus, Trash2, Calendar, Clock, User, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { Plus, Trash2, Calendar, Clock, User, CheckCircle, AlertTriangle, X, Edit } from 'lucide-react';
 
 export default function ShiftManagement() {
   const [activeTab, setActiveTab] = useState('schedules'); // schedules | shifts
@@ -13,6 +13,7 @@ export default function ShiftManagement() {
 
   // For defining a new shift type
   const [newShift, setNewShift] = useState({ shiftName: '', startTime: '', endTime: '', description: '' });
+  const [editingShift, setEditingShift] = useState(null);
 
   // For assigning a shift
   const [newSchedule, setNewSchedule] = useState({ 
@@ -84,12 +85,45 @@ export default function ShiftManagement() {
   const handleCreateShift = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/auth/schedules/shifts', newShift);
+      const payload = {
+        ...newShift,
+        startTime: newShift.startTime.length === 5 ? newShift.startTime + ':00' : newShift.startTime,
+        endTime: newShift.endTime.length === 5 ? newShift.endTime + ':00' : newShift.endTime,
+      };
+      await api.post('/auth/schedules/shifts', payload);
       setNewShift({ shiftName: '', startTime: '', endTime: '', description: '' });
       fetchShifts();
       alert("Tạo ca làm việc thành công!");
     } catch (error) {
       alert("Có lỗi xảy ra khi tạo ca!");
+    }
+  };
+
+  const handleUpdateShift = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...editingShift,
+        startTime: editingShift.startTime.length === 5 ? editingShift.startTime + ':00' : editingShift.startTime,
+        endTime: editingShift.endTime.length === 5 ? editingShift.endTime + ':00' : editingShift.endTime,
+      };
+      await api.put(`/auth/schedules/shifts/${editingShift.id}`, payload);
+      setEditingShift(null);
+      fetchShifts();
+      alert("Cập nhật ca làm việc thành công!");
+    } catch (error) {
+      alert("Có lỗi xảy ra khi cập nhật ca!");
+    }
+  };
+
+  const handleDeleteShift = async (id) => {
+    if (!window.confirm("Bạn có chắc muốn xóa ca mẫu này? Mọi lịch phân công liên quan có thể bị ảnh hưởng.")) return;
+    try {
+      await api.delete(`/auth/schedules/shifts/${id}`);
+      fetchShifts();
+      alert("Xóa ca mẫu thành công!");
+    } catch (error) {
+      alert("Có lỗi xảy ra khi xóa ca mẫu!");
     }
   };
 
@@ -190,38 +224,116 @@ export default function ShiftManagement() {
       {activeTab === 'shifts' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">Tạo Ca Mới</h2>
-            <form onSubmit={handleCreateShift} className="space-y-4">
+            <h2 className="text-xl font-bold text-slate-800 mb-4">
+              {editingShift ? 'Chỉnh Sửa Ca Mẫu' : 'Tạo Ca Mới'}
+            </h2>
+            <form onSubmit={editingShift ? handleUpdateShift : handleCreateShift} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Tên Ca (VD: Ca Sáng)</label>
-                <input required type="text" className="w-full p-2 border border-slate-300 rounded-lg focus:outline-blue-500" value={newShift.shiftName} onChange={e => setNewShift({...newShift, shiftName: e.target.value})} />
+                <input 
+                  required 
+                  type="text" 
+                  className="w-full p-2 border border-slate-300 rounded-lg focus:outline-blue-500" 
+                  value={editingShift ? editingShift.shiftName : newShift.shiftName} 
+                  onChange={e => {
+                    if (editingShift) {
+                      setEditingShift({...editingShift, shiftName: e.target.value});
+                    } else {
+                      setNewShift({...newShift, shiftName: e.target.value});
+                    }
+                  }} 
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Giờ bắt đầu</label>
-                  <input required type="time" className="w-full p-2 border border-slate-300 rounded-lg focus:outline-blue-500" value={newShift.startTime} onChange={e => setNewShift({...newShift, startTime: e.target.value})} />
+                  <input 
+                    required 
+                    type="time" 
+                    className="w-full p-2 border border-slate-300 rounded-lg focus:outline-blue-500" 
+                    value={editingShift ? editingShift.startTime.slice(0,5) : newShift.startTime} 
+                    onChange={e => {
+                      if (editingShift) {
+                        setEditingShift({...editingShift, startTime: e.target.value});
+                      } else {
+                        setNewShift({...newShift, startTime: e.target.value});
+                      }
+                    }} 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Giờ kết thúc</label>
-                  <input required type="time" className="w-full p-2 border border-slate-300 rounded-lg focus:outline-blue-500" value={newShift.endTime} onChange={e => setNewShift({...newShift, endTime: e.target.value})} />
+                  <input 
+                    required 
+                    type="time" 
+                    className="w-full p-2 border border-slate-300 rounded-lg focus:outline-blue-500" 
+                    value={editingShift ? editingShift.endTime.slice(0,5) : newShift.endTime} 
+                    onChange={e => {
+                      if (editingShift) {
+                        setEditingShift({...editingShift, endTime: e.target.value});
+                      } else {
+                        setNewShift({...newShift, endTime: e.target.value});
+                      }
+                    }} 
+                  />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Mô tả thêm</label>
-                <input type="text" className="w-full p-2 border border-slate-300 rounded-lg focus:outline-blue-500" value={newShift.description} onChange={e => setNewShift({...newShift, description: e.target.value})} />
+                <input 
+                  type="text" 
+                  className="w-full p-2 border border-slate-300 rounded-lg focus:outline-blue-500" 
+                  value={editingShift ? (editingShift.description || '') : newShift.description} 
+                  onChange={e => {
+                    if (editingShift) {
+                      setEditingShift({...editingShift, description: e.target.value});
+                    } else {
+                      setNewShift({...newShift, description: e.target.value});
+                    }
+                  }} 
+                />
               </div>
-              <button type="submit" className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center justify-center transition">
-                <Plus className="w-5 h-5 mr-2" /> Tạo Ca Mẫu
-              </button>
+              <div className="flex space-x-2">
+                {editingShift && (
+                  <button 
+                    type="button" 
+                    onClick={() => setEditingShift(null)} 
+                    className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition"
+                  >
+                    Hủy
+                  </button>
+                )}
+                <button 
+                  type="submit" 
+                  className={`py-2.5 text-white rounded-lg font-medium flex items-center justify-center transition ${editingShift ? 'w-2/3 bg-emerald-600 hover:bg-emerald-700' : 'w-full bg-blue-600 hover:bg-blue-700'}`}
+                >
+                  {editingShift ? 'Cập nhật Ca' : 'Tạo Ca Mẫu'}
+                </button>
+              </div>
             </form>
           </div>
 
           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
             {shifts.map(shift => (
-              <div key={shift.id} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col hover:border-blue-200 transition">
+              <div key={shift.id} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col hover:border-blue-200 transition relative group">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-lg text-slate-800">{shift.shiftName}</h3>
-                  <Clock className="text-blue-500 w-5 h-5" />
+                  <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button 
+                      onClick={() => setEditingShift(shift)}
+                      className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition"
+                      title="Chỉnh sửa"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteShift(shift.id)}
+                      className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition"
+                      title="Xóa ca"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 <div className="text-2xl font-black text-slate-700 mb-2">
                   {shift.startTime.slice(0,5)} - {shift.endTime.slice(0,5)}
