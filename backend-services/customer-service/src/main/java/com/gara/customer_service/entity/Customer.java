@@ -37,4 +37,8 @@ public class Customer {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("customer")
     private List<Vehicle> vehicles;
+
+    // Quan hệ 1-1: Mỗi khách hàng có 1 ví điểm
+    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private CustomerLoyalty loyalty;
 }

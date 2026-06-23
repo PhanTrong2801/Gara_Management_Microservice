@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Activity, DollarSign, Package, ArrowUpRight, ArrowDownRight, Edit2, X, UserPlus } from 'lucide-react';
+import { Users, Activity, DollarSign, Package, ArrowUpRight, ArrowDownRight, Edit2, X, UserPlus, Settings } from 'lucide-react';
 import api from '../../api/axiosConfig';
 
 export default function AdminDashboard() {
@@ -11,6 +11,14 @@ export default function AdminDashboard() {
   const [newUser, setNewUser] = useState({ username: '', password: '', fullName: '', roleName: 'RECEPTIONIST' });
   const [createError, setCreateError] = useState('');
   
+  const [showLoyaltyModal, setShowLoyaltyModal] = useState(false);
+  const [loyaltySettings, setLoyaltySettings] = useState({
+    vndPerPoint: 100000,
+    silverThreshold: 100,
+    goldThreshold: 500,
+    platinumThreshold: 2000
+  });
+
   const currentUserRole = localStorage.getItem('role')?.toUpperCase() || '';
   const isAdmin = currentUserRole === 'ROLE_ADMIN' || currentUserRole === 'ADMIN';
 
@@ -106,6 +114,27 @@ export default function AdminDashboard() {
     }
   };
 
+  const openLoyaltyModal = async () => {
+    try {
+      const res = await api.get('/customers/loyalty-settings');
+      if (res.data) setLoyaltySettings(res.data);
+    } catch (err) {
+      console.error("Lỗi lấy cấu hình:", err);
+    }
+    setShowLoyaltyModal(true);
+  };
+
+  const handleSaveLoyaltySettings = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put('/customers/loyalty-settings', loyaltySettings);
+      setShowLoyaltyModal(false);
+      alert('Cập nhật cấu hình thành công!');
+    } catch (err) {
+      alert('Lỗi khi lưu cấu hình');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -115,6 +144,11 @@ export default function AdminDashboard() {
           <p className="text-sm text-gray-500 mt-1">Dành riêng cho Quản lý và Giám đốc hệ thống</p>
         </div>
         <div className="flex gap-3">
+          {isAdmin && (
+            <button onClick={openLoyaltyModal} className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 font-medium rounded-lg shadow-sm hover:bg-purple-100 transition-colors">
+              <Settings className="w-4 h-4" /> Cấu hình Điểm & Hạng
+            </button>
+          )}
           <button onClick={() => window.location.href = '/dashboard/suppliers'} className="px-4 py-2 bg-emerald-50 text-emerald-600 font-medium rounded-lg shadow-sm hover:bg-emerald-100 transition-colors">
             Nhà cung cấp & Nhập hàng
           </button>
@@ -368,6 +402,72 @@ export default function AdminDashboard() {
                 </button>
                 <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium">
                   Tạo tài khoản
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Loyalty Settings Modal */}
+      {showLoyaltyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-bold">Cấu hình Tích điểm & Hạng thẻ</h3>
+              <button onClick={() => setShowLoyaltyModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveLoyaltySettings} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tỷ lệ quy đổi điểm (VNĐ)</label>
+                <p className="text-xs text-gray-500 mb-2">Số tiền khách cần chi tiêu để nhận được 1 điểm</p>
+                <input 
+                  type="number" required
+                  value={loyaltySettings.vndPerPoint}
+                  onChange={(e) => setLoyaltySettings({...loyaltySettings, vndPerPoint: Number(e.target.value)})}
+                  className="w-full p-2 border rounded focus:ring focus:ring-purple-200"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mốc thăng hạng BẠC (Điểm)</label>
+                <input 
+                  type="number" required
+                  value={loyaltySettings.silverThreshold}
+                  onChange={(e) => setLoyaltySettings({...loyaltySettings, silverThreshold: Number(e.target.value)})}
+                  className="w-full p-2 border rounded focus:ring focus:ring-purple-200"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mốc thăng hạng VÀNG (Điểm)</label>
+                <input 
+                  type="number" required
+                  value={loyaltySettings.goldThreshold}
+                  onChange={(e) => setLoyaltySettings({...loyaltySettings, goldThreshold: Number(e.target.value)})}
+                  className="w-full p-2 border rounded focus:ring focus:ring-purple-200"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mốc thăng hạng BẠCH KIM (Điểm)</label>
+                <input 
+                  type="number" required
+                  value={loyaltySettings.platinumThreshold}
+                  onChange={(e) => setLoyaltySettings({...loyaltySettings, platinumThreshold: Number(e.target.value)})}
+                  className="w-full p-2 border rounded focus:ring focus:ring-purple-200"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+                <button type="button" onClick={() => setShowLoyaltyModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50 text-sm font-medium">
+                  Hủy
+                </button>
+                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">
+                  Lưu cài đặt
                 </button>
               </div>
             </form>

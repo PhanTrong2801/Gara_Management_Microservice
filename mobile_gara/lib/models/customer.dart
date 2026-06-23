@@ -24,6 +24,26 @@ class VehicleModel {
   }
 }
 
+class LoyaltyModel {
+  final int totalPoints;
+  final String tier;
+  final double totalSpent;
+
+  LoyaltyModel({
+    required this.totalPoints,
+    required this.tier,
+    required this.totalSpent,
+  });
+
+  factory LoyaltyModel.fromJson(Map<String, dynamic> json) {
+    return LoyaltyModel(
+      totalPoints: json['totalPoints'] ?? 0,
+      tier: json['tier'] ?? 'BRONZE',
+      totalSpent: (json['totalSpent'] ?? 0).toDouble(),
+    );
+  }
+}
+
 class CustomerModel {
   final int id;
   final String fullName;
@@ -31,6 +51,7 @@ class CustomerModel {
   final String email;
   final String address;
   final List<VehicleModel> vehicles;
+  final LoyaltyModel? loyalty;
 
   CustomerModel({
     required this.id,
@@ -39,6 +60,7 @@ class CustomerModel {
     required this.email,
     required this.address,
     required this.vehicles,
+    this.loyalty,
   });
 
   factory CustomerModel.fromJson(Map<String, dynamic> json) {
@@ -50,6 +72,8 @@ class CustomerModel {
       email: json['email'] ?? '',
       address: json['address'] ?? '',
       vehicles: vehiclesList.map((v) => VehicleModel.fromJson(v)).toList(),
+      loyalty: json['loyalty'] != null ? LoyaltyModel.fromJson(json['loyalty']) : null,
     );
   }
 }
+

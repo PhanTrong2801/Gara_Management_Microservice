@@ -22,7 +22,9 @@ export default function BillingManagement() {
     try {
       setLoading(true);
       const response = await api.get('/billing/invoices');
-      setInvoices(response.data);
+      // Sắp xếp hóa đơn mới nhất lên đầu (theo id giảm dần)
+      const sorted = response.data.sort((a, b) => b.id - a.id);
+      setInvoices(sorted);
     } catch (error) {
       console.error('Lỗi khi tải hóa đơn:', error);
     } finally {

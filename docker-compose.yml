@@ -178,6 +178,7 @@ services:
     environment:
       # Biến này sẽ đè nát chữ 'localhost' trong file application.yml, ép nó gọi vào container postgres-db
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/customer_vehicle_db
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
     logging:
       driver: loki
       options:
@@ -191,6 +192,8 @@ services:
       eureka-service:
         condition: service_healthy
       postgres-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   inventory-service:
@@ -235,6 +238,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
     logging:
       driver: loki
       options:
@@ -248,6 +252,8 @@ services:
       eureka-service:
         condition: service_healthy
       mysql:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   prometheus:

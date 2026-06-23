@@ -8,6 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import com.gara.billing_service.event.InvoicePaidEvent;
+import org.springframework.beans.factory.annotation.Value;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +23,13 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final RepairServiceClient repairServiceClient;
+    private final RabbitTemplate rabbitTemplate;
+
+    @Value("${rabbitmq.exchange.name:gara_exchange}")
+    private String exchange;
+
+    @Value("${rabbitmq.routing.key.loyalty:invoice.paid.routing.key}")
+    private String routingKey;
 
     @Transactional
     public Invoice createInvoiceFromRepairOrder(String repairOrderNumber) {
@@ -116,6 +127,18 @@ public class InvoiceService {
         invoice.setStatus("PAID");
         invoice.setPaymentMethod(paymentMethod);
         invoice.setPaidAt(LocalDateTime.now());
-        return invoiceRepository.save(invoice);
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+
+        // Phát sự kiện tích điểm qua RabbitMQ
+        if (invoice.getCustomerId() != null) {
+            InvoicePaidEvent event = new InvoicePaidEvent(
+                    invoice.getCustomerId(),
+                    invoice.getTotalAmount(),
+                    invoice.getInvoiceNumber()
+            );
+            rabbitTemplate.convertAndSend(exchange, routingKey, event);
+        }
+
+        return savedInvoice;
     }
 }

@@ -8,6 +8,7 @@ import 'profile_update_screen.dart';
 import 'repair_tracking_screen.dart';
 import 'booking_appointment_screen.dart';
 import 'customer_billing_screen.dart';
+import 'customer_profile_screen.dart';
 import '../login_screen.dart';
 
 class CustomerDashboard extends StatefulWidget {
@@ -117,6 +118,15 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     }
   }
 
+  String _getTierLabel(String? tier) {
+    switch (tier) {
+      case 'PLATINUM': return 'Bạch Kim';
+      case 'GOLD': return 'Vàng';
+      case 'SILVER': return 'Bạc';
+      default: return 'Đồng';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -150,6 +160,20 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () {
+              if (_profile != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CustomerProfileScreen(profile: _profile!),
+                  ),
+                ).then((_) => _fetchProfileAndData()); // Refresh khi quay lại
+              }
+            },
+            tooltip: 'Thông tin cá nhân',
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -300,6 +324,28 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                         builder: (context) => CustomerBillingScreen(customerId: _profile!.id),
                       ),
                     );
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Card 4: Thông tin cá nhân & Điểm tích lũy
+              _buildMenuCard(
+                title: 'Thông tin & Điểm tích lũy',
+                count: _profile?.loyalty?.totalPoints ?? 0,
+                statusText: 'Hạng ${_getTierLabel(_profile?.loyalty?.tier)}',
+                statusColor: Colors.purple,
+                icon: Icons.person_outline,
+                iconColor: Colors.purple.shade600,
+                iconBgColor: Colors.purple.shade50,
+                onTap: () {
+                  if (_profile != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CustomerProfileScreen(profile: _profile!),
+                      ),
+                    ).then((_) => _fetchProfileAndData());
                   }
                 },
               ),

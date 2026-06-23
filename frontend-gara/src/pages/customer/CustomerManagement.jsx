@@ -62,6 +62,16 @@ export default function CustomerManagement() {
 
     if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Đang tải hồ sơ khách hàng...</div>;
 
+    const getTierBadge = (tier) => {
+        switch(tier) {
+            case 'PLATINUM': return <span className="px-2 py-0.5 bg-slate-800 text-slate-100 text-xs font-bold rounded-full ml-2 border border-slate-700 shadow-sm">BẠCH KIM</span>;
+            case 'GOLD': return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full ml-2 border border-yellow-200">VÀNG</span>;
+            case 'SILVER': return <span className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-bold rounded-full ml-2 border border-gray-300">BẠC</span>;
+            case 'BRONZE':
+            default: return <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-bold rounded-full ml-2 border border-orange-200">ĐỒNG</span>;
+        }
+    };
+
     return (
         <div className="space-y-6 relative">
             {/* Header */}
@@ -96,7 +106,10 @@ export default function CustomerManagement() {
                                 {/* Thông tin Khách hàng */}
                                 <div className="border-b border-gray-100 pb-4 mb-4">
                                     <div className="flex justify-between items-start mb-2">
-                                        <h3 className="text-lg font-bold text-gray-800">{customer.fullName}</h3>
+                                        <h3 className="text-lg font-bold text-gray-800 flex items-center">
+                                            {customer.fullName}
+                                            {customer.loyalty && getTierBadge(customer.loyalty.tier)}
+                                        </h3>
                                         <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">
                       ID: {customer.id}
                     </span>
@@ -117,6 +130,16 @@ export default function CustomerManagement() {
                                             <div className="flex items-center gap-2">
                                                 <MapPin className="w-4 h-4 text-gray-400" />
                                                 <span className="truncate">{customer.address}</span>
+                                            </div>
+                                        )}
+                                        {customer.loyalty && (
+                                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-50">
+                                                <span className="text-xs font-medium bg-purple-50 text-purple-600 px-2 py-1 rounded">
+                                                  Tổng điểm: {customer.loyalty.totalPoints || 0}
+                                                </span>
+                                                <span className="text-xs text-gray-400">
+                                                  (Đã chi: {customer.loyalty.totalSpent?.toLocaleString() || 0}đ)
+                                                </span>
                                             </div>
                                         )}
                                     </div>
