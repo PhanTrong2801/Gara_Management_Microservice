@@ -137,4 +137,15 @@ public class RepairOrderService {
         
         return repairOrderRepository.save(order);
     }
+
+    public RepairOrder approveOrder(String orderId, String signatureBase64) {
+        RepairOrder order = repairOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu sửa chữa"));
+        
+        order.setCustomerApproved(true);
+        order.setCustomerSignatureBase64(signatureBase64);
+        order.setStatus("APPROVED"); // Cập nhật trạng thái sang APPROVED hoặc REPAIRING tùy luồng
+        
+        return repairOrderRepository.save(order);
+    }
 }

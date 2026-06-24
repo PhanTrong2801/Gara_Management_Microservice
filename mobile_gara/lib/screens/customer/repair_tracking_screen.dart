@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:signature/signature.dart';
+import 'dart:typed_data';
 import '../../api/api_service.dart';
 import '../../models/repair_order.dart';
 
@@ -54,6 +56,102 @@ class _RepairTrackingScreenState extends State<RepairTrackingScreen> {
         });
       }
     }
+  }
+
+  Future<void> _approveOrder(String orderId, Uint8List signatureBytes) async {
+    try {
+      final base64Signature = base64Encode(signatureBytes);
+      final response = await ApiService.put(
+        '/repair/orders/$orderId/approve',
+        {'signatureBase64': base64Signature},
+      );
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ký xác nhận báo giá thành công!'), backgroundColor: Colors.green),
+          );
+          Navigator.pop(context); // Đóng chi tiết
+          _fetchOrders(); // Tải lại danh sách
+        }
+      } else {
+        throw Exception('Lỗi xác nhận: ${response.body}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _showSignatureDialog(String orderId) {
+    final SignatureController signatureController = SignatureController(
+      penStrokeWidth: 3,
+      penColor: Colors.black,
+      exportBackgroundColor: Colors.white,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ký xác nhận báo giá', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Vui lòng ký tên vào khung bên dưới để xác nhận đồng ý sửa chữa.'),
+            const SizedBox(height: 12),
+            Container(
+              width: 300,
+              height: 150,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade400),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Signature(
+                  controller: signatureController,
+                  width: 300,
+                  height: 150,
+                  backgroundColor: Colors.grey.shade100,
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => signatureController.clear(),
+                child: const Text('Xóa chữ ký', style: TextStyle(color: Colors.red)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (signatureController.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Vui lòng ký tên trước khi xác nhận.')),
+                );
+                return;
+              }
+              final signatureBytes = await signatureController.toPngBytes();
+              if (signatureBytes != null) {
+                Navigator.pop(context); // Đóng dialog ký tên
+                _approveOrder(orderId, signatureBytes);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white),
+            child: const Text('Xác nhận'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showOrderDetails(RepairOrderModel order) {
@@ -288,6 +386,54 @@ class _RepairTrackingScreenState extends State<RepairTrackingScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
+
+                  // Nút Duyệt Báo Giá (Nếu trạng thái là QUOTING)
+                  if (order.status == 'QUOTING' && !order.customerApproved)
+                    ElevatedButton.icon(
+                      onPressed: () => _showSignatureDialog(order.id),
+                      icon: const Icon(Icons.draw),
+                      label: const Text(
+                        'Xác Nhận & Ký Tên',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 2,
+                      ),
+                    ),
+                  
+                  if (order.customerApproved)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        border: Border.all(color: Colors.green.shade300),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.green),
+                              SizedBox(width: 8),
+                              Text('Đã xác nhận báo giá', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          if (order.customerSignatureBase64 != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12.0),
+                              child: Image.memory(
+                                base64Decode(order.customerSignatureBase64!),
+                                height: 80,
+                              ),
+                            )
+                        ],
+                      ),
+                    ),
                 ],
               ),
             );

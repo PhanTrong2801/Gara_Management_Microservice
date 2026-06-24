@@ -255,6 +255,18 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
             </div>
           )}
 
+          {/* Customer Signature - Bị ẩn đối với thợ máy */}
+          {!isMechanic && order.customerApproved && order.customerSignatureBase64 && (
+            <section className="bg-green-50 p-4 rounded-xl border border-green-200 mt-4 flex flex-col items-center">
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-green-800 mb-2">
+                <CheckCircle className="w-5 h-5" /> Khách hàng đã ký xác nhận trực tuyến
+              </h3>
+              <div className="bg-white p-2 border border-gray-200 rounded-lg shadow-sm">
+                <img src={`data:image/png;base64,${order.customerSignatureBase64}`} alt="Chữ ký khách hàng" className="h-24 object-contain" />
+              </div>
+            </section>
+          )}
+
         </div>
 
         {/* Footer */}

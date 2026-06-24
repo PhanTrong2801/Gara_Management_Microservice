@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:signature/signature.dart';
+import 'dart:typed_data';
 import '../../api/api_service.dart';
 import '../../models/repair_order.dart';
 import '../../providers/auth_provider.dart';
@@ -101,6 +103,132 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _approveOrder(Uint8List signatureBytes) async {
+    setState(() { _isLoading = true; });
+    try {
+      final base64Signature = base64Encode(signatureBytes);
+      final response = await ApiService.put(
+        '/repair/orders/${_currentOrder.id}/approve',
+        {'signatureBase64': base64Signature},
+      );
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Khách hàng ký xác nhận thành công!'), backgroundColor: Colors.green),
+          );
+        }
+        await _fetchOrderDetails();
+        widget.onRefresh();
+      } else {
+        throw Exception(response.body);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi xác nhận: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      setState(() { _isLoading = false; });
+    }
+  }
+
+  void _showSignatureDialog() {
+    final SignatureController signatureController = SignatureController(
+      penStrokeWidth: 3,
+      penColor: Colors.black,
+      exportBackgroundColor: Colors.white,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Khách hàng ký trực tiếp', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Đưa máy cho khách hàng ký vào khung bên dưới để chốt báo giá.'),
+            const SizedBox(height: 12),
+            Container(
+              width: 300,
+              height: 150,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade400),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Signature(
+                  controller: signatureController,
+                  width: 300,
+                  height: 150,
+                  backgroundColor: Colors.grey.shade100,
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => signatureController.clear(),
+                child: const Text('Xóa chữ ký', style: TextStyle(color: Colors.red)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (signatureController.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Vui lòng ký tên trước khi xác nhận.')),
+                );
+                return;
+              }
+              final signatureBytes = await signatureController.toPngBytes();
+              if (signatureBytes != null) {
+                Navigator.pop(context); // Đóng dialog
+                _approveOrder(signatureBytes);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white),
+            child: const Text('Xác nhận chữ ký'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _generateInvoice() async {
+    setState(() { _isLoading = true; });
+    try {
+      final response = await ApiService.post(
+        '/billing/invoices',
+        {'repairOrderNumber': _currentOrder.orderNumber},
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã xuất hóa đơn thành công!'), backgroundColor: Colors.green),
+          );
+        }
+      } else {
+        throw Exception(response.body);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi xuất hóa đơn: Có thể hóa đơn đã được tạo hoặc xảy ra lỗi.'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      setState(() { _isLoading = false; });
     }
   }
 
@@ -499,7 +627,7 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
                           isManager
                               ? DropdownButton<String>(
                                   value: _currentOrder.status,
-                                  items: ['PENDING', 'DIAGNOSING', 'QUOTING', 'REPAIRING', 'COMPLETED'].map((status) {
+                                  items: ['PENDING', 'DIAGNOSING', 'QUOTING', 'APPROVED', 'REPAIRING', 'COMPLETED'].map((status) {
                                     return DropdownMenuItem<String>(
                                       value: status,
                                       child: Text(_translateStatus(status), style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -538,6 +666,71 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
                             ),
                         ],
                       ),
+                      const SizedBox(height: 16),
+                      if (isManager && _currentOrder.status == 'QUOTING' && !_currentOrder.customerApproved)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _showSignatureDialog,
+                            icon: const Icon(Icons.draw),
+                            label: const Text('Cho khách ký trực tiếp', style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange.shade600,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      if (isManager && _currentOrder.status == 'COMPLETED')
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _generateInvoice,
+                            icon: const Icon(Icons.receipt_long),
+                            label: const Text('Xuất hóa đơn thanh toán', style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.indigo.shade600,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      if (isManager && _currentOrder.customerApproved) ...[
+                        const Divider(height: 32),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            border: Border.all(color: Colors.green.shade300),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.green),
+                                  SizedBox(width: 8),
+                                  Text('Khách đã xác nhận chữ ký số', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              if (_currentOrder.customerSignatureBase64 != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                                    child: Image.memory(
+                                      base64Decode(_currentOrder.customerSignatureBase64!),
+                                      height: 100,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                )
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -641,7 +834,7 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
                                       ),
                                   ],
                                 ),
-                                if (task.cost > 0)
+                                if (isManager && task.cost > 0)
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 8.0),
                                     child: Text(
@@ -739,16 +932,24 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
                                         part.partName,
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Đơn giá: ${part.unitPrice.toStringAsFixed(0)}đ x ${part.quantity}',
-                                        style: const TextStyle(color: Colors.grey, fontSize: 13),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Thành tiền: ${subtotal.toStringAsFixed(0)}đ',
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal.shade800),
-                                      )
+                                      if (isManager) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Đơn giá: ${part.unitPrice.toStringAsFixed(0)}đ x ${part.quantity}',
+                                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Thành tiền: ${subtotal.toStringAsFixed(0)}đ',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.teal.shade800),
+                                        )
+                                      ] else ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Số lượng cần thay: ${part.quantity}',
+                                          style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
@@ -840,6 +1041,8 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
         return Colors.blue;
       case 'QUOTING':
         return Colors.purple;
+      case 'APPROVED':
+        return Colors.lightBlue;
       case 'REPAIRING':
         return Colors.teal;
       case 'COMPLETED':
@@ -857,6 +1060,8 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
         return 'Đang chẩn đoán';
       case 'QUOTING':
         return 'Đang báo giá';
+      case 'APPROVED':
+        return 'Khách đã duyệt';
       case 'REPAIRING':
         return 'Đang sửa chữa';
       case 'COMPLETED':

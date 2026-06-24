@@ -60,6 +60,8 @@ class RepairOrderModel {
   final int? mechanicId;
   final String createdBy;
   final String createdAt;
+  final bool customerApproved;
+  final String? customerSignatureBase64;
   final List<RepairTaskModel> tasks;
   final List<RepairPartModel> parts;
 
@@ -73,6 +75,8 @@ class RepairOrderModel {
     this.mechanicId,
     required this.createdBy,
     required this.createdAt,
+    required this.customerApproved,
+    this.customerSignatureBase64,
     required this.tasks,
     required this.parts,
   });
@@ -90,6 +94,8 @@ class RepairOrderModel {
       mechanicId: json['mechanicId'],
       createdBy: json['createdBy'] ?? '',
       createdAt: json['createdAt'] ?? '',
+      customerApproved: json['customerApproved'] ?? false,
+      customerSignatureBase64: json['customerSignatureBase64'],
       tasks: tasksList.map((t) => RepairTaskModel.fromJson(t)).toList(),
       parts: partsList.map((p) => RepairPartModel.fromJson(p)).toList(),
     );

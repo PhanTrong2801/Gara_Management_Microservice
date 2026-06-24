@@ -24,6 +24,10 @@ public class RepairOrder {
     private String createdBy; //nguoi tao
     private Map<String, Object> checkInInfo; // Lưu thông tin linh hoạt (Odo, mức xăng, vết trầy xước)
     
+    // Lưu thông tin khách hàng duyệt báo giá
+    private boolean isCustomerApproved;
+    private String customerSignatureBase64; // Lưu ảnh chữ ký dạng Base64
+    
     // Thêm danh sách công việc và phụ tùng
     private List<RepairTask> tasks = new ArrayList<>();
     private List<RepairPart> parts = new ArrayList<>();

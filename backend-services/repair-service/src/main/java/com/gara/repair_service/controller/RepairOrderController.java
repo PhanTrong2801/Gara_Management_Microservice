@@ -83,4 +83,18 @@ public class RepairOrderController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    // API Khách hàng duyệt báo giá và gửi chữ ký
+    @PutMapping("/orders/{id}/approve")
+    public ResponseEntity<?> approveOrder(
+            @PathVariable String id,
+            @RequestBody java.util.Map<String, String> body
+    ) {
+        try {
+            String signatureBase64 = body.get("signatureBase64");
+            return ResponseEntity.ok(repairOrderService.approveOrder(id, signatureBase64));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
