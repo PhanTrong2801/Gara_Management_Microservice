@@ -39,6 +39,17 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.getCustomerByUserId(userId));
     }
 
+    @PutMapping("/me/fcm-token")
+    public ResponseEntity<?> updateFcmToken(@RequestHeader(value = "X-User-Id", required = false) String userIdStr,
+                                            @RequestParam String token){
+        if (userIdStr == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Long userId = Long.valueOf(userIdStr);
+        customerService.updateFcmToken(userId, token);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/vehicles")
     public ResponseEntity<Vehicle> addVehicle(@Valid @RequestBody VehicleDTO dto){
         return ResponseEntity.ok(customerService.addVehicle(dto));

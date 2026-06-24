@@ -1,14 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'providers/auth_provider.dart';
+import 'api/api_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/manager/manager_dashboard.dart';
 import 'screens/mechanic/mechanic_dashboard.dart';
 import 'screens/customer/customer_dashboard.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling a background message: ${message.messageId}");
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   
   // Khởi tạo hiển thị ngày tháng chuẩn Tiếng Việt (Thứ Hai, Thứ Ba...)
   await initializeDateFormatting('vi', null);
@@ -30,6 +45,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GaraOto Management App',
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -60,6 +76,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   void _checkLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.tryAutoLogin();
+
     setState(() {
       _isInitialized = true;
     });

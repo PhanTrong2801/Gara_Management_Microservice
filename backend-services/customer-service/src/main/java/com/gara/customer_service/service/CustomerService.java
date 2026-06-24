@@ -112,4 +112,12 @@ public class CustomerService {
 
         return customerRepository.save(customer);
     }
+
+    @Transactional
+    public void updateFcmToken(Long userId, String token) {
+        Customer customer = customerRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng với UserId: " + userId));
+        customer.setFcmToken(token);
+        customerRepository.save(customer);
+    }
 }

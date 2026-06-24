@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../api/api_service.dart';
 import '../models/user.dart';
+import '../main.dart'; // To access navigatorKey
 
 class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
@@ -37,6 +39,9 @@ class AuthProvider extends ChangeNotifier {
 
         // Tải thông tin chi tiết user
         await fetchProfile(data['username']);
+        
+        // Setup FCM for push notifications
+        await setupFirebaseMessaging();
         
         _isLoading = false;
         notifyListeners();
@@ -89,9 +94,45 @@ class AuthProvider extends ChangeNotifier {
     if (prefs.containsKey('token') && prefs.containsKey('username')) {
       _token = prefs.getString('token');
       final username = prefs.getString('username');
-      if (username != null) {
+        if (username != null) {
         await fetchProfile(username);
+        await setupFirebaseMessaging();
       }
+    }
+  }
+
+  Future<void> setupFirebaseMessaging() async {
+    try {
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+      NotificationSettings settings = await messaging.requestPermission();
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        String? token = await messaging.getToken();
+        if (token != null) {
+          print("FCM Token: $token");
+          // Call API to update FCM token for the currently logged in user
+          await ApiService.put('/customers/me/fcm-token?token=$token', {});
+        }
+
+        // Bắt thông báo khi app đang mở (Foreground)
+        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+          print('Foreground message received: ${message.notification?.title}');
+          if (message.notification != null && navigatorKey.currentContext != null) {
+            ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+              SnackBar(
+                content: Text('${message.notification!.title}: ${message.notification!.body}'),
+                duration: const Duration(seconds: 5),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.blueAccent,
+                margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          }
+        });
+      }
+    } catch (e) {
+      print("Lỗi cấu hình Firebase Messaging: $e");
     }
   }
 }

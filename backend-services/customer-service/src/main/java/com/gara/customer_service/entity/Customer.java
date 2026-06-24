@@ -32,6 +32,8 @@ public class Customer {
     @Column(name = "user_id", unique = true)
     private Long userId;
 
+    private String fcmToken;
+
     // Quan hệ 1-N: 1 Khách hàng có nhiều Xe
     // CascadeType.ALL: Khi xóa khách hàng thì xóa luôn xe của họ
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
