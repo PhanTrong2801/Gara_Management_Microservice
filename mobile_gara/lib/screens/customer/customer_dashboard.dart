@@ -208,7 +208,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.blue.shade200.withOpacity(0.5),
+                      color: Colors.blue.shade200.withValues(alpha: 0.5),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     )
@@ -223,7 +223,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.person, color: Colors.white, size: 24),
@@ -401,7 +401,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.1),
+                            color: statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(

@@ -120,4 +120,10 @@ public class CustomerService {
         customer.setFcmToken(token);
         customerRepository.save(customer);
     }
+
+    public String getFcmToken(Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
+        return customer.getFcmToken();
+    }
 }

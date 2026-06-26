@@ -170,7 +170,7 @@ class _CustomerBillingScreenState extends State<CustomerBillingScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: invoice.status == 'PAID' ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                      color: invoice.status == 'PAID' ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -288,7 +288,7 @@ class _CustomerBillingScreenState extends State<CustomerBillingScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: isPaid ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                                        color: isPaid ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(

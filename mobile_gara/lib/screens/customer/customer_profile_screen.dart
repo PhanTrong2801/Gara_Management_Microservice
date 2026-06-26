@@ -113,11 +113,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                               padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white.withOpacity(0.5), width: 3),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 3),
                               ),
                               child: CircleAvatar(
                                 radius: 40,
-                                backgroundColor: Colors.white.withOpacity(0.2),
+                                backgroundColor: Colors.white.withValues(alpha: 0.2),
                                 child: Text(
                                   profile.fullName.isNotEmpty ? profile.fullName[0].toUpperCase() : '?',
                                   style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white),
@@ -134,7 +134,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                               decoration: BoxDecoration(
-                                color: tierColor.withOpacity(0.9),
+                                color: tierColor.withValues(alpha: 0.9),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
@@ -168,12 +168,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [tierColor.withOpacity(0.15), tierColor.withOpacity(0.05)],
+                              colors: [tierColor.withValues(alpha: 0.15), tierColor.withValues(alpha: 0.05)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: tierColor.withOpacity(0.3)),
+                            border: Border.all(color: tierColor.withValues(alpha: 0.3)),
                           ),
                           child: Column(
                             children: [
@@ -253,7 +253,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(children: children),
@@ -297,7 +297,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -345,7 +345,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Row(

@@ -210,7 +210,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                         ),
                         const SizedBox(height: 8),
                         DropdownButtonFormField<UserModel>(
-                          value: selectedUser,
+                          initialValue: selectedUser,
                           hint: const Text('Chọn nhân viên...'),
                           isExpanded: true,
                           items: availableStaff.map((u) {
@@ -393,7 +393,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                             children: [
                               CircleAvatar(
                                 radius: 28,
-                                backgroundColor: Colors.blueAccent.withOpacity(0.1),
+                                backgroundColor: Colors.blueAccent.withValues(alpha: 0.1),
                                 child: const Icon(Icons.person, color: Colors.blueAccent, size: 28),
                               ),
                               const SizedBox(width: 16),
@@ -582,7 +582,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                     final mechanics = shiftSchedules.where((s) => s.roleName == 'MECHANIC' || s.roleName == 'ROLE_MECHANIC').toList();
                     final receptionists = shiftSchedules.where((s) => s.roleName == 'RECEPTIONIST').toList();
 
-                    final isOk = mechanics.length >= 2 && receptionists.length >= 1;
+                    final isOk = mechanics.length >= 2 && receptionists.isNotEmpty;
 
                     return Card(
                       elevation: 0,
@@ -649,7 +649,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                                 Text(
                                   'Lễ tân: ${receptionists.length}/1',
                                   style: TextStyle(
-                                    color: receptionists.length >= 1 ? Colors.green.shade800 : Colors.red,
+                                    color: receptionists.isNotEmpty ? Colors.green.shade800 : Colors.red,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -773,7 +773,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -917,7 +917,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(

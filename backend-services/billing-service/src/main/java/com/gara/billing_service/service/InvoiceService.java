@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import com.gara.billing_service.event.InvoicePaidEvent;
 import org.springframework.beans.factory.annotation.Value;
+import com.gara.billing_service.dto.NotificationEvent;
+import java.util.HashMap;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -102,7 +104,21 @@ public class InvoiceService {
         invoice.setTotalPartCost(totalParts);
         invoice.setTotalAmount(totalLabor + totalParts);
 
-        return invoiceRepository.save(invoice);
+        Invoice savedInvoice = invoiceRepository.save(invoice);
+
+        if (savedInvoice.getCustomerId() != null) {
+            NotificationEvent notifEvent = new NotificationEvent();
+            notifEvent.setCustomerId(savedInvoice.getCustomerId());
+            notifEvent.setTitle("Hóa đơn mới được tạo");
+            notifEvent.setBody("Hóa đơn " + savedInvoice.getInvoiceNumber() + " trị giá " + savedInvoice.getTotalAmount() + " VNĐ đã được tạo.");
+            Map<String, String> data = new HashMap<>();
+            data.put("invoiceNumber", savedInvoice.getInvoiceNumber());
+            notifEvent.setData(data);
+            
+            rabbitTemplate.convertAndSend("notification.exchange", "notification.invoice", notifEvent);
+        }
+
+        return savedInvoice;
     }
 
     public List<Invoice> getAllInvoices() {

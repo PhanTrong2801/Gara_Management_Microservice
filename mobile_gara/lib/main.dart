@@ -4,11 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'providers/auth_provider.dart';
-import 'api/api_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/manager/manager_dashboard.dart';
 import 'screens/mechanic/mechanic_dashboard.dart';
 import 'screens/customer/customer_dashboard.dart';
+import 'services/notification_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -23,6 +23,7 @@ void main() async {
   
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  await NotificationService.init();
 
   
   // Khởi tạo hiển thị ngày tháng chuẩn Tiếng Việt (Thứ Hai, Thứ Ba...)

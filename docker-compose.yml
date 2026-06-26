@@ -256,6 +256,36 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  notification-service:
+    build:
+      context: ./backend-services/notification-service
+    container_name: notification-service
+    ports:
+      - "8086:8086"
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - FIREBASE_SERVICE_ACCOUNT_PATH=/app/firebase-service-account.json
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/notification_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./backend-services/firebase-service-account.json:/app/firebase-service-account.json:ro
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   prometheus:
     image: prom/prometheus:v2.51.2
     container_name: prometheus

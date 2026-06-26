@@ -272,7 +272,7 @@ class _CreateRepairOrderScreenState extends State<CreateRepairOrderScreen> {
                             : _selectedCustomer!.vehicles.isEmpty
                                 ? const Text('Khách hàng này chưa đăng ký xe nào trên hệ thống.', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600))
                                 : DropdownButtonFormField<VehicleModel>(
-                                    value: _selectedCar,
+                                    initialValue: _selectedCar,
                                     isExpanded: true,
                                     items: _selectedCustomer!.vehicles.map((car) {
                                       return DropdownMenuItem<VehicleModel>(
@@ -331,7 +331,7 @@ class _CreateRepairOrderScreenState extends State<CreateRepairOrderScreen> {
 
                             // Fuel level
                             DropdownButtonFormField<String>(
-                              value: _fuelLevel,
+                              initialValue: _fuelLevel,
                               decoration: InputDecoration(
                                 labelText: 'Mức nhiên liệu hiện tại',
                                 border: OutlineInputBorder(

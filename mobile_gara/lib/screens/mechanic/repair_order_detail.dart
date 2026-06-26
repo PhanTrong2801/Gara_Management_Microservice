@@ -445,7 +445,7 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
               content: loadingSvc
                   ? const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))
                   : DropdownButtonFormField<CatalogServiceModel>(
-                      value: selectedSvc,
+                      initialValue: selectedSvc,
                       hint: const Text('Chọn dịch vụ/công việc...'),
                       isExpanded: true,
                       items: availableServices.map((s) {
@@ -525,7 +525,7 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         DropdownButtonFormField<CatalogPartModel>(
-                          value: selectedPart,
+                          initialValue: selectedPart,
                           hint: const Text('Chọn phụ tùng...'),
                           isExpanded: true,
                           items: availableParts.map((p) {
@@ -642,7 +642,7 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
                               : Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: _getStatusColor(_currentOrder.status).withOpacity(0.1),
+                                    color: _getStatusColor(_currentOrder.status).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -1014,7 +1014,7 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))
                 ],
               ),
               child: ElevatedButton.icon(

@@ -185,7 +185,7 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
                     children: [
                       CircleAvatar(
                         radius: 28,
-                        backgroundColor: Colors.teal.withOpacity(0.1),
+                        backgroundColor: Colors.teal.withValues(alpha: 0.1),
                         child: Icon(
                           _currentIndex == 0 ? Icons.construction : Icons.assignment, 
                           color: Colors.teal, 
@@ -290,7 +290,7 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
               return Card(
                 elevation: 0,
                 margin: const EdgeInsets.only(bottom: 10),
-                color: todaySchedules.isNotEmpty ? Colors.white : const Color(0xFFF1F5F9).withOpacity(0.5),
+                color: todaySchedules.isNotEmpty ? Colors.white : const Color(0xFFF1F5F9).withValues(alpha: 0.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(
@@ -455,7 +455,7 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(order.status).withOpacity(0.1),
+                          color: _getStatusColor(order.status).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(

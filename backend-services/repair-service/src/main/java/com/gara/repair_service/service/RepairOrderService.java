@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 
 import com.gara.repair_service.dto.StockCheckRequest;
 import com.gara.repair_service.dto.InventoryDeductEvent;
+import com.gara.repair_service.dto.NotificationEvent;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -99,6 +102,20 @@ public class RepairOrderService {
             event.setUsedParts(usages);
             rabbitTemplate.convertAndSend("gara.exchange", "repair.completed", event);
             System.out.println("Đã gửi sự kiện trừ kho cho phiếu: " + savedOrder.getOrderNumber());
+        }
+
+        // Gửi tin nhắn sang RabbitMQ để thông báo cho khách hàng
+        if (isJustCompleted && savedOrder.getCustomerId() != null) {
+            NotificationEvent notifEvent = new NotificationEvent();
+            notifEvent.setCustomerId(savedOrder.getCustomerId());
+            notifEvent.setTitle("Xe đã sửa xong!");
+            notifEvent.setBody("Phiếu sửa chữa " + savedOrder.getOrderNumber() + " đã hoàn thành. Bạn có thể đến gara để nhận xe.");
+            Map<String, String> data = new HashMap<>();
+            data.put("orderNumber", savedOrder.getOrderNumber());
+            notifEvent.setData(data);
+            
+            rabbitTemplate.convertAndSend("notification.exchange", "notification.repair", notifEvent);
+            System.out.println("Đã gửi sự kiện thông báo cho khách hàng: " + savedOrder.getCustomerId());
         }
 
         return savedOrder;

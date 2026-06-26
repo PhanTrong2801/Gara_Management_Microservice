@@ -350,7 +350,7 @@ class _RepairTrackingScreenState extends State<RepairTrackingScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.shade200.withOpacity(0.5),
+                          color: Colors.blue.shade200.withValues(alpha: 0.5),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -545,7 +545,7 @@ class _RepairTrackingScreenState extends State<RepairTrackingScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: _getStatusColor(order.status).withOpacity(0.1),
+                                        color: _getStatusColor(order.status).withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(

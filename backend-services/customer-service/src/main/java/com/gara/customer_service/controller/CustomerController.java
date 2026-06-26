@@ -50,6 +50,11 @@ public class CustomerController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/fcm-token/{customerId}")
+    public ResponseEntity<String> getFcmToken(@PathVariable Long customerId) {
+        return ResponseEntity.ok(customerService.getFcmToken(customerId));
+    }
+
     @PostMapping("/vehicles")
     public ResponseEntity<Vehicle> addVehicle(@Valid @RequestBody VehicleDTO dto){
         return ResponseEntity.ok(customerService.addVehicle(dto));
