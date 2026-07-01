@@ -88,37 +88,76 @@ public class RepairOrderService {
             order.setMechanicId(mechanicId);
         }
         
+        if (isJustCompleted) {
+            order.setInventoryDeducted(false);
+            order.setCustomerNotified(false);
+        }
+        
         RepairOrder savedOrder = repairOrderRepository.save(order);
 
         // Gửi tin nhắn sang RabbitMQ để trừ kho (Lúc này chắc chắn kho đủ)
-        if (isJustCompleted && savedOrder.getParts() != null && !savedOrder.getParts().isEmpty()) {
+        if (isJustCompleted) {
+            if (savedOrder.getParts() != null && !savedOrder.getParts().isEmpty()) {
+                try {
+                    sendInventoryDeductEvent(savedOrder);
+                    savedOrder.setInventoryDeducted(true);
+                    savedOrder = repairOrderRepository.save(savedOrder);
+                } catch (Exception e) {
+                    System.err.println("Lỗi gửi sự kiện trừ kho lên RabbitMQ: " + e.getMessage());
+                }
+            } else {
+                savedOrder.setInventoryDeducted(true);
+                savedOrder = repairOrderRepository.save(savedOrder);
+            }
+        }
+
+        // Gửi tin nhắn sang RabbitMQ để thông báo cho khách hàng
+        if (isJustCompleted) {
+            if (savedOrder.getCustomerId() != null) {
+                try {
+                    sendCustomerNotificationEvent(savedOrder);
+                    savedOrder.setCustomerNotified(true);
+                    savedOrder = repairOrderRepository.save(savedOrder);
+                } catch (Exception e) {
+                    System.err.println("Lỗi gửi sự kiện thông báo lên RabbitMQ: " + e.getMessage());
+                }
+            } else {
+                savedOrder.setCustomerNotified(true);
+                savedOrder = repairOrderRepository.save(savedOrder);
+            }
+        }
+
+        return savedOrder;
+    }
+
+    public void sendInventoryDeductEvent(RepairOrder order) {
+        if (order.getParts() != null && !order.getParts().isEmpty()) {
             InventoryDeductEvent event = new InventoryDeductEvent();
-            event.setOrderNumber(savedOrder.getOrderNumber());
+            event.setOrderNumber(order.getOrderNumber());
             
-            List<InventoryDeductEvent.PartUsage> usages = savedOrder.getParts().stream()
+            List<InventoryDeductEvent.PartUsage> usages = order.getParts().stream()
                 .map(p -> new InventoryDeductEvent.PartUsage(p.getPartId(), p.getQuantity()))
                 .collect(Collectors.toList());
             
             event.setUsedParts(usages);
             rabbitTemplate.convertAndSend("gara.exchange", "repair.completed", event);
-            System.out.println("Đã gửi sự kiện trừ kho cho phiếu: " + savedOrder.getOrderNumber());
+            System.out.println("Đã gửi sự kiện trừ kho cho phiếu: " + order.getOrderNumber());
         }
+    }
 
-        // Gửi tin nhắn sang RabbitMQ để thông báo cho khách hàng
-        if (isJustCompleted && savedOrder.getCustomerId() != null) {
+    public void sendCustomerNotificationEvent(RepairOrder order) {
+        if (order.getCustomerId() != null) {
             NotificationEvent notifEvent = new NotificationEvent();
-            notifEvent.setCustomerId(savedOrder.getCustomerId());
+            notifEvent.setCustomerId(order.getCustomerId());
             notifEvent.setTitle("Xe đã sửa xong!");
-            notifEvent.setBody("Phiếu sửa chữa " + savedOrder.getOrderNumber() + " đã hoàn thành. Bạn có thể đến gara để nhận xe.");
+            notifEvent.setBody("Phiếu sửa chữa " + order.getOrderNumber() + " đã hoàn thành. Bạn có thể đến gara để nhận xe.");
             Map<String, String> data = new HashMap<>();
-            data.put("orderNumber", savedOrder.getOrderNumber());
+            data.put("orderNumber", order.getOrderNumber());
             notifEvent.setData(data);
             
             rabbitTemplate.convertAndSend("notification.exchange", "notification.repair", notifEvent);
-            System.out.println("Đã gửi sự kiện thông báo cho khách hàng: " + savedOrder.getCustomerId());
+            System.out.println("Đã gửi sự kiện thông báo cho khách hàng: " + order.getCustomerId());
         }
-
-        return savedOrder;
     }
 
     public RepairOrder updateTasksAndParts(String id, List<RepairTask> tasks, List<RepairPart> parts) {

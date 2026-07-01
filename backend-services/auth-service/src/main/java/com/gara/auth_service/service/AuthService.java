@@ -10,9 +10,13 @@ import com.gara.auth_service.repository.UserRepository;
 import com.gara.auth_service.util.JwtUtil;
 import com.gara.auth_service.client.CustomerServiceClient;
 import com.gara.auth_service.dto.InternalCustomerDTO;
+import com.gara.auth_service.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -74,9 +78,9 @@ public class AuthService {
         return "Đăng ký thành công tài khoản: " + request.getUsername();
     }
 
-    public java.util.List<com.gara.auth_service.dto.UserDto> getAllUsers() {
+    public List<UserDto> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(user -> new com.gara.auth_service.dto.UserDto(
+                .map(user -> new UserDto(
                         user.getId(),
                         user.getUsername(),
                         user.getFullName(),
@@ -84,10 +88,10 @@ public class AuthService {
                         user.getPhone(),
                         user.getRole().getName(),
                         user.isActive()
-                )).collect(java.util.stream.Collectors.toList());
+                )).collect(Collectors.toList());
     }
 
-    public com.gara.auth_service.dto.UserDto updateUser(Long id, com.gara.auth_service.dto.UserDto request) {
+    public UserDto updateUser(Long id, UserDto request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
                 
@@ -99,7 +103,21 @@ public class AuthService {
         
         userRepository.save(user);
         
-        return new com.gara.auth_service.dto.UserDto(
+        return new UserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole().getName(),
+                user.isActive()
+        );
+    }
+
+    public UserDto getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản: " + username));
+        return new UserDto(
                 user.getId(),
                 user.getUsername(),
                 user.getFullName(),

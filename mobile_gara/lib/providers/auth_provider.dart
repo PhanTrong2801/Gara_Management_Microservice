@@ -58,20 +58,18 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
 
-  // Lấy thông tin cá nhân bằng cách lọc danh sách users
+  // Lấy thông tin cá nhân của user đang đăng nhập
   Future<void> fetchProfile(String username) async {
     try {
-      final response = await ApiService.get('/auth/users');
+      final response = await ApiService.get('/auth/users/me');
       if (response.statusCode == 200) {
-        final List list = jsonDecode(response.body);
-        final userJson = list.firstWhere(
-          (u) => u['username'] == username,
-          orElse: () => null,
-        );
+        final userJson = jsonDecode(response.body);
         if (userJson != null) {
           _currentUser = UserModel.fromJson(userJson);
           notifyListeners();
         }
+      } else {
+        print("Lỗi tải profile: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
       print("Lỗi fetchProfile: $e");

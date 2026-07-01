@@ -20,6 +20,15 @@ public class UserController {
         return ResponseEntity.ok(authService.getAllUsers());
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getCurrentUser(@RequestHeader("X-User-Username") String username) {
+        try {
+            return ResponseEntity.ok(authService.getUserByUsername(username));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto request) {
         try {

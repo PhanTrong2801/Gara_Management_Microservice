@@ -11,4 +11,6 @@ import java.util.Optional;
 public interface RepairOrderRepository extends MongoRepository<RepairOrder, String> {
     Optional<RepairOrder> findByOrderNumber(String orderNumber);
     List<RepairOrder> findByCustomerId(Long customerId);
+    List<RepairOrder> findByStatusAndInventoryDeducted(String status, boolean inventoryDeducted);
+    List<RepairOrder> findByStatusAndCustomerNotified(String status, boolean customerNotified);
 }

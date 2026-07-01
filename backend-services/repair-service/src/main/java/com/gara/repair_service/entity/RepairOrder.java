@@ -2,6 +2,7 @@ package com.gara.repair_service.entity;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -15,8 +16,13 @@ import java.util.Map;
 public class RepairOrder {
 
     private String id; // MongoDB tự sinh chuỗi hex ObjectId ngẫu nhiên
+
+    @Indexed(unique = true)
     private String orderNumber; // Mã phiếu, ví dụ: RO-2026-0001
+    
     private Long carId;        // Lưu ID xe từ Customer Service (MySQL)
+    
+    @Indexed
     private Long customerId;   // Lưu ID khách từ Customer Service (MySQL)
     private String status;     // PENDING, DIAGNOSING, QUOTING, REPAIRING, COMPLETED
     private Long advisorId;    // ID của Lễ tân tiếp nhận
@@ -27,6 +33,10 @@ public class RepairOrder {
     // Lưu thông tin khách hàng duyệt báo giá
     private boolean isCustomerApproved;
     private String customerSignatureBase64; // Lưu ảnh chữ ký dạng Base64
+    
+    // Trạng thái đồng bộ sự kiện (Embedded Outbox)
+    private boolean inventoryDeducted = false;
+    private boolean customerNotified = false;
     
     // Thêm danh sách công việc và phụ tùng
     private List<RepairTask> tasks = new ArrayList<>();
