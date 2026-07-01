@@ -7,6 +7,7 @@ export default function ShiftManagement() {
   const [shifts, setShifts] = useState([]);
   const [users, setUsers] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [pendingSchedules, setPendingSchedules] = useState([]);
 
   // Modal State for Assigning Shift
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -48,6 +49,7 @@ export default function ShiftManagement() {
   useEffect(() => {
     fetchShifts();
     fetchUsers();
+    fetchPendingSchedules();
   }, []);
 
   useEffect(() => {
@@ -79,6 +81,15 @@ export default function ShiftManagement() {
       setSchedules(res.data);
     } catch (error) {
       console.error("Lỗi lấy lịch làm việc", error);
+    }
+  };
+
+  const fetchPendingSchedules = async () => {
+    try {
+      const res = await api.get('/auth/schedules/pending');
+      setPendingSchedules(res.data);
+    } catch (error) {
+      console.error("Lỗi lấy lịch chờ duyệt", error);
     }
   };
 
@@ -150,6 +161,42 @@ export default function ShiftManagement() {
     }
   };
 
+  const handleApprove = async (id) => {
+    try {
+      await api.put(`/auth/schedules/${id}/approve`);
+      fetchPendingSchedules();
+      fetchSchedules();
+    } catch (error) {
+      alert("Lỗi khi duyệt!");
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await api.put(`/auth/schedules/${id}/reject`);
+      fetchPendingSchedules();
+      fetchSchedules();
+    } catch (error) {
+      alert("Lỗi khi từ chối!");
+    }
+  };
+
+  const groupedPendingSchedules = useMemo(() => {
+    const groups = {};
+    pendingSchedules.forEach(req => {
+      if (!groups[req.workDate]) {
+        groups[req.workDate] = [];
+      }
+      groups[req.workDate].push(req);
+    });
+    return Object.keys(groups)
+      .sort((a, b) => new Date(a) - new Date(b))
+      .map(date => ({
+        date,
+        requests: groups[date]
+      }));
+  }, [pendingSchedules]);
+
   // Generate 7 days of the week based on currentWeekStart
   const daysOfWeek = useMemo(() => {
     const days = [];
@@ -166,7 +213,11 @@ export default function ShiftManagement() {
 
   // Check if a shift on a specific day is fully covered (1 Receptionist, 2 Mechanics)
   const getShiftCoverageStatus = (date, shiftId) => {
-    const shiftSchedules = schedules.filter(s => s.workDate === date && s.shiftId === shiftId);
+    const shiftSchedules = schedules.filter(s => 
+      s.workDate === date && 
+      s.shiftId === shiftId && 
+      (s.status === 'SCHEDULED' || s.status === 'ASSIGNED_BY_MANAGER')
+    );
     const mechanics = shiftSchedules.filter(s => s.roleName === 'MECHANIC' || s.roleName === 'ROLE_MECHANIC');
     const receptionists = shiftSchedules.filter(s => s.roleName === 'RECEPTIONIST');
     
@@ -218,6 +269,17 @@ export default function ShiftManagement() {
           className={`pb-4 px-4 font-semibold transition ${activeTab === 'shifts' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
         >
           Cấu Hình Ca Mẫu
+        </button>
+        <button
+          onClick={() => setActiveTab('pending')}
+          className={`pb-4 px-4 font-semibold transition flex items-center ${activeTab === 'pending' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+        >
+          Duyệt Yêu Cầu 
+          {pendingSchedules.length > 0 && (
+            <span className="ml-2 bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {pendingSchedules.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -443,6 +505,92 @@ export default function ShiftManagement() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {activeTab === 'pending' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center mb-2">
+            <div>
+              <h2 className="font-bold text-xl text-slate-800">Yêu Cầu Đăng Ký Chờ Duyệt</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Hiện đang có <span className="font-bold text-rose-500">{pendingSchedules.length}</span> yêu cầu chờ xử lý
+              </p>
+            </div>
+          </div>
+          
+          {pendingSchedules.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
+              <CheckCircle className="w-16 h-16 text-emerald-400 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-bold text-slate-700 mb-2">Tuyệt vời!</h3>
+              <p>Mọi yêu cầu đăng ký lịch đã được xử lý xong.</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {groupedPendingSchedules.map(group => (
+                <div key={group.date} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in duration-300 slide-in-from-bottom-2">
+                  <div className="bg-slate-50/80 border-b border-slate-200 px-5 py-3.5 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Calendar className="w-5 h-5 text-blue-500 mr-2.5" />
+                      <h3 className="font-bold text-slate-800 text-lg">
+                        Ngày {group.date.split('-').reverse().join('/')}
+                      </h3>
+                      <span className="ml-3 bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-md">
+                        {group.requests.length} yêu cầu
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {group.requests.map(req => (
+                      <div key={req.id} className="border border-slate-200 rounded-xl p-5 hover:shadow-lg hover:shadow-slate-200/50 transition-all duration-200 bg-white flex flex-col justify-between group">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600 flex items-center justify-center font-bold text-lg mr-3 shadow-sm border border-blue-200/50 group-hover:scale-105 transition-transform">
+                              {req.fullName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-800 text-base">{req.fullName}</div>
+                              <div className="text-[11px] font-semibold text-slate-500 mt-0.5 uppercase tracking-wider bg-slate-100 inline-block px-1.5 py-0.5 rounded">
+                                {req.roleName === 'MECHANIC' || req.roleName === 'ROLE_MECHANIC' ? 'Thợ máy' : 'Lễ tân'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-slate-50 p-3.5 rounded-lg mb-5 border border-slate-100">
+                          <div className="flex items-center text-sm font-semibold text-slate-700">
+                            <Clock className="w-4 h-4 mr-2 text-slate-400" />
+                            {req.shiftName}
+                          </div>
+                          {req.note && (
+                            <div className="text-xs text-slate-500 mt-2.5 italic border-t border-slate-200 pt-2.5 relative">
+                              <span className="text-slate-300 absolute -top-1.5 bg-slate-50 px-1 font-serif text-lg">"</span>
+                              <span className="ml-2">{req.note}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex space-x-3 mt-auto">
+                          <button 
+                            onClick={() => handleReject(req.id)} 
+                            className="flex-1 py-2.5 border border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 rounded-lg font-bold transition text-sm flex justify-center items-center"
+                          >
+                            <X className="w-4 h-4 mr-1.5" /> Từ chối
+                          </button>
+                          <button 
+                            onClick={() => handleApprove(req.id)} 
+                            className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold transition shadow-md shadow-emerald-500/20 text-sm flex justify-center items-center"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1.5" /> Duyệt
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

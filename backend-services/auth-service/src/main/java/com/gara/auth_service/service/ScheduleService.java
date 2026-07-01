@@ -15,6 +15,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.gara.auth_service.config.RabbitMQConfig;
+import com.gara.auth_service.dto.ScheduleNotificationEvent;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+
 @Service
 @RequiredArgsConstructor
 public class ScheduleService {
@@ -22,6 +26,7 @@ public class ScheduleService {
     private final ShiftRepository shiftRepository;
     private final EmployeeScheduleRepository scheduleRepository;
     private final UserRepository userRepository;
+    private final RabbitTemplate rabbitTemplate;
 
     // --- Shift Management ---
     public List<ShiftDto> getAllShifts() {
@@ -72,12 +77,82 @@ public class ScheduleService {
         schedule.setUser(user);
         schedule.setShift(shift);
         schedule.setWorkDate(dto.getWorkDate());
-        schedule.setStatus(dto.getStatus() != null ? dto.getStatus() : "SCHEDULED");
+        schedule.setStatus(dto.getStatus() != null ? dto.getStatus() : "ASSIGNED_BY_MANAGER");
         schedule.setNote(dto.getNote());
+
+        EmployeeSchedule saved = scheduleRepository.save(schedule);
+        
+        // Notify user about assignment
+        ScheduleNotificationEvent event = new ScheduleNotificationEvent(
+                user.getId(),
+                "Bạn có lịch làm việc mới",
+                "Quản lý đã xếp bạn làm việc ngày " + saved.getWorkDate() + " ca " + saved.getShift().getShiftName(),
+                "SCHEDULE_UPDATE"
+        );
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.SCHEDULE_ROUTING_KEY, event);
+
+        return mapToScheduleDto(saved);
+    }
+    
+    public EmployeeScheduleDto registerSchedule(Long userId, Long shiftId, LocalDate workDate) {
+        List<EmployeeSchedule> existing = scheduleRepository.findByUserIdAndWorkDate(userId, workDate);
+        if (!existing.isEmpty()) {
+            throw new RuntimeException("Bạn đã có lịch làm việc (hoặc đăng ký) trong ngày này.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Shift shift = shiftRepository.findById(shiftId)
+                .orElseThrow(() -> new RuntimeException("Shift not found"));
+
+        EmployeeSchedule schedule = new EmployeeSchedule();
+        schedule.setUser(user);
+        schedule.setShift(shift);
+        schedule.setWorkDate(workDate);
+        schedule.setStatus("PENDING_APPROVAL");
 
         return mapToScheduleDto(scheduleRepository.save(schedule));
     }
-    
+
+    public List<EmployeeScheduleDto> getPendingSchedules() {
+        return scheduleRepository.findByStatus("PENDING_APPROVAL").stream()
+                .map(this::mapToScheduleDto).collect(Collectors.toList());
+    }
+
+    public EmployeeScheduleDto approveSchedule(Long id) {
+        EmployeeSchedule schedule = scheduleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+        schedule.setStatus("SCHEDULED");
+        EmployeeSchedule saved = scheduleRepository.save(schedule);
+
+        ScheduleNotificationEvent event = new ScheduleNotificationEvent(
+                schedule.getUser().getId(),
+                "Lịch làm việc đã duyệt",
+                "Đăng ký làm việc ngày " + schedule.getWorkDate() + " ca " + schedule.getShift().getShiftName() + " của bạn đã được quản lý phê duyệt.",
+                "SCHEDULE_UPDATE"
+        );
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.SCHEDULE_ROUTING_KEY, event);
+
+        return mapToScheduleDto(saved);
+    }
+
+    public EmployeeScheduleDto rejectSchedule(Long id) {
+        EmployeeSchedule schedule = scheduleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+        schedule.setStatus("REJECTED");
+        EmployeeSchedule saved = scheduleRepository.save(schedule);
+
+        ScheduleNotificationEvent event = new ScheduleNotificationEvent(
+                schedule.getUser().getId(),
+                "Lịch làm việc bị từ chối",
+                "Rất tiếc, đăng ký làm việc ngày " + schedule.getWorkDate() + " ca " + schedule.getShift().getShiftName() + " của bạn không được duyệt.",
+                "SCHEDULE_UPDATE"
+        );
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.SCHEDULE_ROUTING_KEY, event);
+
+        return mapToScheduleDto(saved);
+    }
+
     public void deleteSchedule(Long id) {
         scheduleRepository.deleteById(id);
     }
@@ -104,6 +179,7 @@ public class ScheduleService {
         dto.setWorkDate(schedule.getWorkDate());
         dto.setStatus(schedule.getStatus());
         dto.setNote(schedule.getNote());
+        dto.setCreatedAt(schedule.getCreatedAt());
         return dto;
     }
 }

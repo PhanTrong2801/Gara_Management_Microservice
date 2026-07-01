@@ -8,6 +8,7 @@ import '../../models/repair_order.dart';
 import '../../providers/auth_provider.dart';
 import '../login_screen.dart';
 import 'repair_order_detail.dart';
+import '../schedule_registration_screen.dart';
 
 class MechanicDashboard extends StatefulWidget {
   const MechanicDashboard({super.key});
@@ -274,6 +275,23 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
               style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ScheduleRegistrationScreen()),
+            );
+          },
+          icon: const Icon(Icons.add_task),
+          label: const Text('Đăng ký lịch làm việc mới'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.teal.shade50,
+            foregroundColor: Colors.teal,
+            elevation: 0,
+            side: BorderSide(color: Colors.teal.shade200),
+          ),
         ),
         const SizedBox(height: 12),
         Expanded(

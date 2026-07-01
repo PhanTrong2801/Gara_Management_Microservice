@@ -1,6 +1,7 @@
 package com.gara.notification_service.service;
 
 import com.gara.notification_service.dto.NotificationEvent;
+import com.gara.notification_service.dto.ScheduleNotificationEvent;
 import com.gara.notification_service.entity.Notification;
 import com.gara.notification_service.feign.CustomerClient;
 import com.gara.notification_service.repository.NotificationRepository;
@@ -81,6 +82,34 @@ public class NotificationService {
 
         } catch (Exception e) {
             log.error("Error processing notification event: {}", e.getMessage(), e);
+        }
+    }
+
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(value = "gara.queue.schedule.notification", durable = "true"),
+            exchange = @Exchange(value = "gara.exchange.notification", type = "direct"),
+            key = "schedule.notify"
+    ))
+    public void handleScheduleEvent(ScheduleNotificationEvent event) {
+        log.info("Received schedule event for userId: {}", event.getUserId());
+        // For employees, we would normally get the FCM token for the employee's user ID here.
+        // Assuming we have an employeeClient or we use customerClient if employees are also in there.
+        // For demonstration, we just log it and save it.
+        
+        try {
+            Notification notifEntity = new Notification();
+            // We use customerId field to store userId for now (assuming same table structure)
+            notifEntity.setCustomerId(event.getUserId()); 
+            notifEntity.setTitle(event.getTitle());
+            notifEntity.setBody(event.getBody());
+            notifEntity.setType(event.getType());
+            notificationRepository.save(notifEntity);
+            
+            log.info("Saved schedule notification to database for user: {}", event.getUserId());
+            
+            // TODO: Fetch employee FCM token and send via FirebaseMessaging
+        } catch (Exception e) {
+            log.error("Error processing schedule event: {}", e.getMessage(), e);
         }
     }
 }

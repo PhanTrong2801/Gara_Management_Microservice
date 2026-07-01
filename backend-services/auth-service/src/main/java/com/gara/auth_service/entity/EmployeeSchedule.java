@@ -27,10 +27,18 @@ public class EmployeeSchedule {
     @Column(name = "work_date", nullable = false)
     private LocalDate workDate;
 
-    // SCHEDULED, PRESENT, ABSENT
-    @Column(nullable = false, length = 20)
+    // PENDING_APPROVAL, SCHEDULED, REJECTED, ASSIGNED_BY_MANAGER, PRESENT, ABSENT
+    @Column(nullable = false, length = 30)
     private String status = "SCHEDULED";
     
     @Column(length = 255)
     private String note;
+
+    @Column(name = "created_at")
+    private java.time.LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = java.time.LocalDateTime.now();
+    }
 }

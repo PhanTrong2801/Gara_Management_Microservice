@@ -58,4 +58,27 @@ public class ScheduleController {
         scheduleService.deleteSchedule(id);
         return ResponseEntity.ok().build();
     }
+
+    // --- Registration & Approval API ---
+    @PostMapping("/register")
+    public ResponseEntity<EmployeeScheduleDto> registerSchedule(@RequestBody EmployeeScheduleDto dto) {
+        // Trong thực tế, lấy userId từ JWT Token qua SecurityContextHolder để bảo mật.
+        // Tạm thời lấy từ body cho phiên bản demo này.
+        return ResponseEntity.ok(scheduleService.registerSchedule(dto.getUserId(), dto.getShiftId(), dto.getWorkDate()));
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<List<EmployeeScheduleDto>> getPendingSchedules() {
+        return ResponseEntity.ok(scheduleService.getPendingSchedules());
+    }
+
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<EmployeeScheduleDto> approveSchedule(@PathVariable Long id) {
+        return ResponseEntity.ok(scheduleService.approveSchedule(id));
+    }
+
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<EmployeeScheduleDto> rejectSchedule(@PathVariable Long id) {
+        return ResponseEntity.ok(scheduleService.rejectSchedule(id));
+    }
 }

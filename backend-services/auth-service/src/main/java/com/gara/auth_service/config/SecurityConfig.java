@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -14,13 +13,11 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
-        http
-                .csrf(AbstractHttpConfigurer::disable)// Tắt CSRF vì mình dùng Token
-                .authorizeHttpRequests(auth ->auth
-                        .requestMatchers("/api/auth/login","/api/auth/register", "/api/auth/users", "/api/auth/users/**", "/api/auth/schedules", "/api/auth/schedules/**").permitAll()
-                        .anyRequest().authenticated()
-                );
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        // Tắt CSRF vì API Gateway đã xác thực JWT
+        http.csrf(csrf -> csrf.disable());
+        // Cho phép tất cả request - API Gateway đã kiểm tra bảo mật
+        http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
 

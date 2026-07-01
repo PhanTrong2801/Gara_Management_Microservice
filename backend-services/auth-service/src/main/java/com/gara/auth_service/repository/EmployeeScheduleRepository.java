@@ -11,4 +11,7 @@ import java.util.List;
 public interface EmployeeScheduleRepository extends JpaRepository<EmployeeSchedule, Long> {
     List<EmployeeSchedule> findByWorkDateBetween(LocalDate startDate, LocalDate endDate);
     List<EmployeeSchedule> findByUserIdAndWorkDateBetween(Long userId, LocalDate startDate, LocalDate endDate);
+    List<EmployeeSchedule> findByStatus(String status);
+    List<EmployeeSchedule> findByStatusAndWorkDateBetween(String status, LocalDate startDate, LocalDate endDate);
+    List<EmployeeSchedule> findByUserIdAndWorkDate(Long userId, LocalDate workDate);
 }

@@ -107,6 +107,7 @@ services:
       - "8081:8081"
     environment:
       - JWT_SECRET=${JWT_SECRET}
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
     logging:
       driver: loki
       options:
@@ -120,6 +121,8 @@ services:
       mysql:
         condition: service_healthy
       eureka-service:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   api-gateway:

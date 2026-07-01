@@ -2,6 +2,7 @@ package com.gara.auth_service.dto;
 
 import lombok.Data;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 public class EmployeeScheduleDto {
@@ -14,4 +15,5 @@ public class EmployeeScheduleDto {
     private LocalDate workDate;
     private String status;
     private String note;
+    private LocalDateTime createdAt;
 }
