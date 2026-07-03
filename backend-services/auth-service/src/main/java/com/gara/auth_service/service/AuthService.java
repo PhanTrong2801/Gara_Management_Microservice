@@ -14,6 +14,7 @@ import com.gara.auth_service.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,6 +43,7 @@ public class AuthService {
     }
 
     // Logic Đăng ký
+    @Transactional
     public String register(RegisterRequest request) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new RuntimeException("Tên đăng nhập đã tồn tại");
@@ -67,12 +69,9 @@ public class AuthService {
                     .email(user.getEmail())
                     .phoneNumber(user.getPhone())
                     .build();
-            try {
-                customerServiceClient.createInternalCustomer(dto);
-            } catch (Exception e) {
-                // Log lỗi, có thể cân nhắc throw RuntimeException nếu bắt buộc phải có
-                System.err.println("Không thể tạo Customer bên customer-service: " + e.getMessage());
-            }
+            // Không dùng try-catch ở đây để exception từ Feign (hoặc Fallback) bay thẳng ra ngoài
+            // Spring @Transactional sẽ tự động Rollback giao dịch lưu User ở trên
+            customerServiceClient.createInternalCustomer(dto);
         }
 
         return "Đăng ký thành công tài khoản: " + request.getUsername();

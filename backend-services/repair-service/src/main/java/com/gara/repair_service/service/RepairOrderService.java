@@ -63,71 +63,38 @@ public class RepairOrderService {
         RepairOrder order = repairOrderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu sửa chữa"));
         
-        boolean isJustCompleted = "COMPLETED".equals(status) && !"COMPLETED".equals(order.getStatus());
+        boolean isRequestingComplete = "COMPLETED".equals(status) && !"COMPLETED".equals(order.getStatus());
         
-        // --- KIỂM TRA TỒN KHO ĐỒNG BỘ TRƯỚC KHI CHO PHÉP HOÀN THÀNH ---
-        if (isJustCompleted && order.getParts() != null && !order.getParts().isEmpty()) {
-            StockCheckRequest request = new StockCheckRequest();
-            List<StockCheckRequest.PartRequest> partRequests = order.getParts().stream()
-                    .map(p -> new StockCheckRequest.PartRequest(p.getPartId(), p.getQuantity()))
-                    .collect(Collectors.toList());
-            request.setParts(partRequests);
-            
-            try {
-                inventoryClient.checkStock(request);
-            } catch (feign.FeignException.BadRequest e) {
-                // e.contentUTF8() sẽ chứa chuỗi lỗi từ Inventory Service (ví dụ: "Phụ tùng LỐP XE không đủ...")
-                throw new RuntimeException(e.contentUTF8());
-            } catch (Exception e) {
-                throw new RuntimeException("Lỗi kết nối đến kho vật tư để kiểm tra tồn kho. Vui lòng thử lại sau.");
-            }
-        }
-        
-        order.setStatus(status);
         if (mechanicId != null) {
             order.setMechanicId(mechanicId);
         }
         
-        if (isJustCompleted) {
-            order.setInventoryDeducted(false);
-            order.setCustomerNotified(false);
+        if (isRequestingComplete) {
+            if (order.getParts() != null && !order.getParts().isEmpty()) {
+                // Áp dụng Saga Pattern: Chuyển sang trạng thái chờ kho xác nhận thay vì COMPLETED ngay
+                order.setStatus("WAITING_INVENTORY");
+                order.setInventoryDeducted(false);
+                order.setCustomerNotified(false);
+                RepairOrder savedOrder = repairOrderRepository.save(order);
+                
+                // Gửi sự kiện trừ kho sang RabbitMQ
+                sendInventoryDeductEvent(savedOrder);
+                return savedOrder;
+            } else {
+                // Không dùng phụ tùng nào -> Hoàn thành luôn
+                order.setStatus("COMPLETED");
+                order.setInventoryDeducted(true);
+                order.setCustomerNotified(true);
+                RepairOrder savedOrder = repairOrderRepository.save(order);
+                
+                // Gửi thông báo cho khách hàng
+                sendCustomerNotificationEvent(savedOrder);
+                return savedOrder;
+            }
         }
         
-        RepairOrder savedOrder = repairOrderRepository.save(order);
-
-        // Gửi tin nhắn sang RabbitMQ để trừ kho (Lúc này chắc chắn kho đủ)
-        if (isJustCompleted) {
-            if (savedOrder.getParts() != null && !savedOrder.getParts().isEmpty()) {
-                try {
-                    sendInventoryDeductEvent(savedOrder);
-                    savedOrder.setInventoryDeducted(true);
-                    savedOrder = repairOrderRepository.save(savedOrder);
-                } catch (Exception e) {
-                    System.err.println("Lỗi gửi sự kiện trừ kho lên RabbitMQ: " + e.getMessage());
-                }
-            } else {
-                savedOrder.setInventoryDeducted(true);
-                savedOrder = repairOrderRepository.save(savedOrder);
-            }
-        }
-
-        // Gửi tin nhắn sang RabbitMQ để thông báo cho khách hàng
-        if (isJustCompleted) {
-            if (savedOrder.getCustomerId() != null) {
-                try {
-                    sendCustomerNotificationEvent(savedOrder);
-                    savedOrder.setCustomerNotified(true);
-                    savedOrder = repairOrderRepository.save(savedOrder);
-                } catch (Exception e) {
-                    System.err.println("Lỗi gửi sự kiện thông báo lên RabbitMQ: " + e.getMessage());
-                }
-            } else {
-                savedOrder.setCustomerNotified(true);
-                savedOrder = repairOrderRepository.save(savedOrder);
-            }
-        }
-
-        return savedOrder;
+        order.setStatus(status);
+        return repairOrderRepository.save(order);
     }
 
     public void sendInventoryDeductEvent(RepairOrder order) {

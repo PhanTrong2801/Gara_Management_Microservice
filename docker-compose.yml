@@ -103,8 +103,8 @@ services:
     build:
       context: ./backend-services/auth-service
     container_name: auth-service
-    ports:
-      - "8081:8081"
+    # ports:
+    #   - "8081:8081"
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
@@ -150,8 +150,8 @@ services:
     build:
       context: ./backend-services/repair-service
     container_name: repair-service
-    ports:
-      - "8082:8082"
+    # ports:
+    #   - "8082:8082"
     environment: # <--- Bổ sung khối này
       - SPRING_MONGODB_URI=${MONGO_REPAIR_DB_URI}
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
@@ -176,8 +176,8 @@ services:
     build:
       context: ./backend-services/customer-service # Sửa lại đường dẫn này nếu thư mục của bạn nằm trong backend-services
     container_name: customer-service
-    ports:
-      - "8083:8083"
+    # ports:
+    #   - "8083:8083"
     environment:
       # Biến này sẽ đè nát chữ 'localhost' trong file application.yml, ép nó gọi vào container postgres-db
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/customer_vehicle_db
@@ -203,8 +203,8 @@ services:
     build:
       context: ./backend-services/inventory-service # Đường dẫn chuẩn tới thư mục chứa Dockerfile của service kho
     container_name: inventory-service
-    ports:
-      - "8084:8084"
+    # ports:
+    #   - "8084:8084"
     environment:
       # Ép Spring Boot gọi vào container tên là gara-mysql trong mạng nội bộ Docker thay vì localhost
       - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/inventory_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -234,8 +234,8 @@ services:
     build:
       context: ./backend-services/billing-service
     container_name: billing-service
-    ports:
-      - "8085:8085"
+    # ports:
+    #   - "8085:8085"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/billing_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
@@ -263,8 +263,8 @@ services:
     build:
       context: ./backend-services/notification-service
     container_name: notification-service
-    ports:
-      - "8086:8086"
+    # ports:
+    #   - "8086:8086"
     environment:
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
       - SPRING_RABBITMQ_HOST=gara-rabbitmq

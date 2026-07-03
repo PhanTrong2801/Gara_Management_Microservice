@@ -2,6 +2,15 @@ server:
   port: 8081
 
 spring:
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+      client:
+        config:
+          default:
+            connectTimeout: 2000
+            readTimeout: 5000
   application:
     name: auth-service
   datasource:
