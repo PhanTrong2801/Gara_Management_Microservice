@@ -9,6 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 
 import com.gara.inventory_service.service.InventoryTransactionService;
 import com.gara.inventory_service.dto.InventoryTransactionDTO;
@@ -50,13 +54,16 @@ public class PartController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Part>> getAllParts() {
-        return ResponseEntity.ok(partService.getAllParts());
+    public ResponseEntity<Page<Part>> getAllParts(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(partService.getAllParts(search, pageable));
     }
 
     @GetMapping("/low-stock")
-    public ResponseEntity<List<Part>> getLowStockParts() {
-        return ResponseEntity.ok(partService.getLowStockParts());
+    public ResponseEntity<Page<Part>> getLowStockParts(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(partService.getLowStockParts(pageable));
     }
 
     @GetMapping("/{id}")
@@ -77,8 +84,10 @@ public class PartController {
     }
 
     @GetMapping("/{id}/transactions")
-    public ResponseEntity<List<InventoryTransactionDTO>> getTransactions(@PathVariable Long id) {
-        return ResponseEntity.ok(transactionService.getTransactionsByPartId(id));
+    public ResponseEntity<Page<InventoryTransactionDTO>> getTransactions(
+            @PathVariable Long id,
+            @PageableDefault(size = 10, sort = "transactionDate", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(transactionService.getTransactionsByPartId(id, pageable));
     }
 
     @PostMapping("/check-stock")

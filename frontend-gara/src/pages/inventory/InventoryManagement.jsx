@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Package, Plus, ArrowUpRight, ArrowDownRight, X, AlertCircle, Edit, Trash2, History, Search } from 'lucide-react';
 import api from '../../api/axiosConfig';
-import { useTablePagination } from '../../hooks/useTablePagination';
 import Pagination from '../../components/common/Pagination';
+import { useDebounce } from '../../hooks/useDebounce';
 
 export default function InventoryManagement() {
     const [parts, setParts] = useState([]);
@@ -33,27 +33,23 @@ export default function InventoryManagement() {
 
     const [error, setError] = useState('');
 
-    const {
-        currentData: currentParts,
-        currentPage,
-        totalPages,
-        searchTerm,
-        setSearchTerm,
-        handlePageChange,
-        totalItems
-    } = useTablePagination(parts, (part, term) => 
-        part.partCode.toLowerCase().includes(term) || 
-        part.name.toLowerCase().includes(term)
-    );
+    // Server-side pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const debouncedSearch = useDebounce(searchTerm, 500);
 
     // Tải danh sách phụ tùng
     const fetchParts = async () => {
         try {
-            const response = await api.get('/inventory/parts');
-            setParts(response.data);
+            const response = await api.get(`/inventory/parts?page=${currentPage - 1}&size=10&search=${debouncedSearch}`);
+            setParts(response.data.content || []);
+            setTotalPages(response.data.totalPages || 1);
+            setTotalItems(response.data.totalElements || 0);
             
-            const lowStockResponse = await api.get('/inventory/parts/low-stock');
-            setLowStockParts(lowStockResponse.data);
+            const lowStockResponse = await api.get('/inventory/parts/low-stock?size=50');
+            setLowStockParts(lowStockResponse.data.content || lowStockResponse.data || []);
         } catch (error) {
             console.error("Lỗi khi tải kho phụ tùng:", error);
         } finally {
@@ -72,6 +68,9 @@ export default function InventoryManagement() {
 
     useEffect(() => {
         fetchParts();
+    }, [currentPage, debouncedSearch]);
+
+    useEffect(() => {
         fetchSuppliers();
     }, []);
 
@@ -139,8 +138,8 @@ export default function InventoryManagement() {
         setIsHistoryModalOpen(true);
         setHistoryLoading(true);
         try {
-            const res = await api.get(`/inventory/parts/${part.id}/transactions`);
-            setTransactionHistory(res.data);
+            const res = await api.get(`/inventory/parts/${part.id}/transactions?size=50`);
+            setTransactionHistory(res.data.content || res.data || []);
         } catch (error) {
             console.error("Lỗi khi tải lịch sử:", error);
             setTransactionHistory([]);
@@ -213,7 +212,7 @@ export default function InventoryManagement() {
                         type="text" 
                         placeholder="Tìm kiếm mã vật tư hoặc tên..." 
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow text-sm"
                     />
                 </div>
@@ -233,7 +232,7 @@ export default function InventoryManagement() {
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                        {currentParts.length === 0 ? (
+                        {parts.length === 0 ? (
                             <tr>
                                 <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                                     <AlertCircle className="w-8 h-8 mx-auto text-gray-300 mb-3" />
@@ -241,7 +240,7 @@ export default function InventoryManagement() {
                                 </td>
                             </tr>
                         ) : (
-                            currentParts.map((part) => (
+                            parts.map((part) => (
                                 <tr key={part.id} className="hover:bg-gray-50/80 transition-colors">
                                     <td className="px-6 py-4 font-semibold text-gray-900">{part.partCode}</td>
                                     <td className="px-6 py-4">
@@ -316,7 +315,7 @@ export default function InventoryManagement() {
                     currentPage={currentPage} 
                     totalPages={totalPages} 
                     totalItems={totalItems} 
-                    onPageChange={handlePageChange} 
+                    onPageChange={setCurrentPage} 
                 />
             </div>
 

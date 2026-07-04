@@ -3,6 +3,8 @@ package com.gara.repair_service.service;
 import com.gara.repair_service.entity.ServiceCatalog;
 import com.gara.repair_service.repository.ServiceCatalogRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,6 +17,13 @@ public class ServiceCatalogService {
 
     public List<ServiceCatalog> getAllServices() {
         return serviceCatalogRepository.findAll();
+    }
+
+    public Page<ServiceCatalog> getAllServices(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isBlank()) {
+            return serviceCatalogRepository.findAll(pageable);
+        }
+        return serviceCatalogRepository.searchServiceCatalogs(keyword, pageable);
     }
 
     public ServiceCatalog createService(ServiceCatalog serviceCatalog) {

@@ -6,6 +6,8 @@ import com.gara.repair_service.entity.RepairTask;
 import com.gara.repair_service.repository.RepairOrderRepository;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
@@ -53,6 +55,13 @@ public class RepairOrderService {
 
     public List<RepairOrder> getAllOrders(){
         return repairOrderRepository.findAll();
+    }
+
+    public Page<RepairOrder> getAllOrders(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isBlank()) {
+            return repairOrderRepository.findAll(pageable);
+        }
+        return repairOrderRepository.searchRepairOrders(keyword, pageable);
     }
 
     public List<RepairOrder> getOrdersByCustomerId(Long customerId) {

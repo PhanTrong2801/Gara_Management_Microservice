@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Car, Phone, MapPin, Mail, X, CheckCircle } from 'lucide-react';
+import { Users, Plus, Car, Phone, MapPin, Mail, X, CheckCircle, Search } from 'lucide-react';
 import api from '../../api/axiosConfig';
+import Pagination from '../../components/common/Pagination';
+import { useDebounce } from '../../hooks/useDebounce';
 
 export default function CustomerManagement() {
     const [customers, setCustomers] = useState([]);
@@ -16,13 +18,23 @@ export default function CustomerManagement() {
     const [vehicleForm, setVehicleForm] = useState({ licensePlate: '', vin: '', brand: '', model: '', year: new Date().getFullYear() });
     const [error, setError] = useState('');
 
+    // Server-side pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const debouncedSearch = useDebounce(searchTerm, 500);
+
     // Hàm tải danh sách khách hàng
     const fetchCustomers = async () => {
         try {
-            const response = await api.get('/customers');
-            setCustomers(response.data);
+            const response = await api.get(`/customers?page=${currentPage - 1}&size=9&search=${debouncedSearch}`);
+            setCustomers(response.data.content || []);
+            setTotalPages(response.data.totalPages || 1);
+            setTotalItems(response.data.totalElements || 0);
         } catch (error) {
             console.error("Lỗi khi tải danh sách khách hàng:", error);
+            setCustomers([]);
         } finally {
             setLoading(false);
         }
@@ -30,7 +42,7 @@ export default function CustomerManagement() {
 
     useEffect(() => {
         fetchCustomers();
-    }, []);
+    }, [currentPage, debouncedSearch]);
 
     // Xử lý tạo Khách hàng
     const handleCustomerSubmit = async (e) => {
@@ -83,6 +95,20 @@ export default function CustomerManagement() {
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">Danh sách hồ sơ khách hàng và phương tiện đã đăng ký</p>
                 </div>
+                
+                <div className="flex-1 max-w-md mx-6">
+                    <div className="relative">
+                        <Search className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" />
+                        <input 
+                            type="text" 
+                            placeholder="Tìm kiếm theo tên hoặc SĐT..." 
+                            value={searchTerm}
+                            onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow text-sm"
+                        />
+                    </div>
+                </div>
+
                 <button
                     onClick={() => setIsCustomerModalOpen(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -184,6 +210,15 @@ export default function CustomerManagement() {
                         </div>
                     ))
                 )}
+            </div>
+
+            <div className="mt-6 flex justify-center">
+                <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages} 
+                    totalItems={totalItems} 
+                    onPageChange={setCurrentPage} 
+                />
             </div>
 
             {/* MODAL 1: THÊM KHÁCH HÀNG */}

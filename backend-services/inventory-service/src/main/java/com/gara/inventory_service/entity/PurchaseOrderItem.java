@@ -1,6 +1,7 @@
 package com.gara.inventory_service.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,7 +22,8 @@ public class PurchaseOrderItem {
     @JsonIgnore
     private PurchaseOrder purchaseOrder;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "part_id", nullable = false)
     private Part part;
 

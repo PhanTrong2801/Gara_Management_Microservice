@@ -27,7 +27,7 @@ export default function RepairOrderList() {
         const fetchOrders = async () => {
             try {
                 const response = await api.get('/repair/orders');
-                setOrders(response.data); // Đưa data từ backend vào state của React
+                setOrders(response.data.content || response.data || []); // Đưa data từ backend vào state của React
             } catch (error) {
                 console.error("Lỗi khi tải danh sách:", error);
             } finally {

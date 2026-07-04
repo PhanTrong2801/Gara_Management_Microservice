@@ -3,6 +3,9 @@ package com.gara.repair_service.controller;
 import com.gara.repair_service.entity.Appointment;
 import com.gara.repair_service.service.AppointmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,8 +29,10 @@ public class AppointmentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Appointment>> getAllAppointments() {
-        return ResponseEntity.ok(appointmentService.getAllAppointments());
+    public ResponseEntity<Page<Appointment>> getAllAppointments(
+            @RequestParam(required = false, defaultValue = "") String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(appointmentService.getAllAppointments(search, pageable));
     }
 
     @PutMapping("/{id}/status")

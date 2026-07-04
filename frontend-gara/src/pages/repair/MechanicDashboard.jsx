@@ -19,16 +19,17 @@ const MechanicDashboard = () => {
 
             const res = await axios.get('http://localhost:8080/api/repair/orders', { headers });
             
-            // Chỉ lấy các phiếu đang ở trạng thái REPAIRING
-            const activeOrders = res.data.filter(o => o.status === 'REPAIRING');
+            const allOrders = res.data.content || res.data || [];
+            const activeOrders = allOrders.filter(o => o.status === 'REPAIRING');
             setOrders(activeOrders);
 
             // Fetch thông tin khách hàng
             const customerIds = [...new Set(activeOrders.map(a => a.customerId))];
             if (customerIds.length > 0) {
                 const customersRes = await axios.get('http://localhost:8080/api/customers', { headers });
+                const customersList = customersRes.data.content || customersRes.data || [];
                 const map = {};
-                customersRes.data.forEach(c => {
+                customersList.forEach(c => {
                     map[c.id] = c;
                 });
                 setCustomersMap(map);

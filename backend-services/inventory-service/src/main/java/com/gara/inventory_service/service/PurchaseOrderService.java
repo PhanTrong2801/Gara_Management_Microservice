@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -58,8 +60,11 @@ public class PurchaseOrderService {
         return purchaseOrderRepository.save(savedOrder);
     }
 
-    public List<PurchaseOrder> getAllPurchaseOrders() {
-        return purchaseOrderRepository.findAll();
+    public Page<PurchaseOrder> getAllPurchaseOrders(String search, Pageable pageable) {
+        if (search != null && !search.trim().isEmpty()) {
+            return purchaseOrderRepository.searchPurchaseOrders(search.trim(), pageable);
+        }
+        return purchaseOrderRepository.findAll(pageable);
     }
 
     public PurchaseOrder getPurchaseOrderById(Long id) {

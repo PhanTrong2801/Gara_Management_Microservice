@@ -8,10 +8,12 @@ import com.gara.customer_service.entity.Vehicle;
 import com.gara.customer_service.service.CustomerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/customers")
@@ -66,8 +68,10 @@ public class CustomerController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Customer>> getAllCustomers() {
-        return ResponseEntity.ok(customerService.getAllCustomers());
+    public ResponseEntity<Page<Customer>> getAllCustomers(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(customerService.getAllCustomers(search, pageable));
     }
 
     @PutMapping("/{id}")

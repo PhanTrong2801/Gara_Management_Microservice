@@ -30,11 +30,13 @@ export default function InvoiceDetailsModal({ isOpen, onClose, invoice, onPaymen
       ]);
       
       const sMap = {};
-      svcRes.data.forEach(s => { sMap[s.id] = s.name; });
+      const svcList = svcRes.data.content || svcRes.data || [];
+      svcList.forEach(s => { sMap[s.id] = s.name; });
       setServicesMap(sMap);
 
       const pMap = {};
-      partsRes.data.forEach(p => { pMap[p.id] = p.name; });
+      const partsList = partsRes.data.content || partsRes.data || [];
+      partsList.forEach(p => { pMap[p.id] = p.name; });
       setPartsMap(pMap);
 
       const orderData = orderRes.data;

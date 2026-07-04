@@ -11,7 +11,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -95,9 +97,12 @@ public class CustomerService {
                 });
     }
 
-    // 4. Lấy tất cả khách hàng
-    public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
+    // 4. Lấy tất cả khách hàng (có phân trang và tìm kiếm)
+    public Page<Customer> getAllCustomers(String search, Pageable pageable) {
+        if (search != null && !search.trim().isEmpty()) {
+            return customerRepository.searchCustomers(search.trim(), pageable);
+        }
+        return customerRepository.findAll(pageable);
     }
 
     @Transactional

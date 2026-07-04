@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -17,8 +19,11 @@ public class SupplierService {
         return supplierRepository.save(supplier);
     }
 
-    public List<Supplier> getAllSuppliers() {
-        return supplierRepository.findAll();
+    public Page<Supplier> getAllSuppliers(String search, Pageable pageable) {
+        if (search != null && !search.trim().isEmpty()) {
+            return supplierRepository.searchSuppliers(search.trim(), pageable);
+        }
+        return supplierRepository.findAll(pageable);
     }
 
     public Supplier getSupplierById(Long id) {

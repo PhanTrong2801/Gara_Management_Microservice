@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -72,12 +74,15 @@ public class PartService {
         }
     }
 
-    public List<Part> getAllParts(){
-        return partRepository.findAll();
+    public Page<Part> getAllParts(String search, Pageable pageable){
+        if (search != null && !search.trim().isEmpty()) {
+            return partRepository.searchParts(search.trim(), pageable);
+        }
+        return partRepository.findAll(pageable);
     }
 
-    public List<Part> getLowStockParts() {
-        return partRepository.findLowStockParts();
+    public Page<Part> getLowStockParts(Pageable pageable) {
+        return partRepository.findLowStockParts(pageable);
     }
 
     public Part getPartById(Long id){

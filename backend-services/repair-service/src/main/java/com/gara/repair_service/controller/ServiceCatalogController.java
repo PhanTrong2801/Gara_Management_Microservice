@@ -3,6 +3,9 @@ package com.gara.repair_service.controller;
 import com.gara.repair_service.entity.ServiceCatalog;
 import com.gara.repair_service.service.ServiceCatalogService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,8 +19,10 @@ public class ServiceCatalogController {
     private final ServiceCatalogService serviceCatalogService;
 
     @GetMapping
-    public ResponseEntity<List<ServiceCatalog>> getAllServices() {
-        return ResponseEntity.ok(serviceCatalogService.getAllServices());
+    public ResponseEntity<Page<ServiceCatalog>> getAllServices(
+            @RequestParam(required = false, defaultValue = "") String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(serviceCatalogService.getAllServices(search, pageable));
     }
 
     @PostMapping

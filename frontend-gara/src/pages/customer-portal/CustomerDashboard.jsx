@@ -25,9 +25,9 @@ const CustomerDashboard = () => {
                 axios.get(`http://localhost:8080/api/billing/invoices/customer/${customerId}`, { headers }).catch(() => ({data: []}))
             ]);
             
-            const activeRepairsCount = ordersRes.data.filter(o => o.status !== 'COMPLETED').length;
-            const upcomingApptsCount = apptsRes.data.filter(a => a.status === 'PENDING' || a.status === 'CONFIRMED').length;
-            const unpaidInvoicesCount = invoicesRes.data.filter(i => i.status !== 'PAID').length;
+            const activeRepairsCount = (ordersRes.data.content || ordersRes.data || []).filter(o => o.status !== 'COMPLETED').length;
+            const upcomingApptsCount = (apptsRes.data.content || apptsRes.data || []).filter(a => a.status === 'PENDING' || a.status === 'CONFIRMED').length;
+            const unpaidInvoicesCount = (invoicesRes.data.content || invoicesRes.data || []).filter(i => i.status !== 'PAID').length;
             
             setStats({
                 activeRepairs: activeRepairsCount,

@@ -6,11 +6,13 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.data.web.config.EnableSpringDataWebSupport;
 
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
 @EnableScheduling
+@EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 public class RepairServiceApplication {
 
 	public static void main(String[] args) {

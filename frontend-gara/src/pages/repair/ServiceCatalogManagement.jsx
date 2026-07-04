@@ -28,7 +28,7 @@ export default function ServiceCatalogManagement() {
         try {
             setLoading(true);
             const response = await api.get('/repair/service-catalog');
-            setServices(response.data);
+            setServices(response.data.content || response.data || []);
         } catch (error) {
             console.error('Lỗi lấy danh mục dịch vụ:', error);
         } finally {

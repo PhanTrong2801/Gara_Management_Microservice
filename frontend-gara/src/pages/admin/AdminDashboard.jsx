@@ -53,16 +53,16 @@ export default function AdminDashboard() {
       setUsers(usersRes.data);
 
       // Tính tổng doanh thu từ hóa đơn đã thanh toán
-      const invoices = invoicesRes.data || [];
+      const invoices = invoicesRes.data.content || invoicesRes.data || [];
       const revenue = invoices
         .filter(inv => inv.status === 'PAID')
         .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
 
       // Đếm tổng phiếu sửa chữa
-      const repairs = repairsRes.data || [];
+      const repairs = repairsRes.data.content || repairsRes.data || [];
 
       // Đếm số lượng phụ tùng sắp hết (ví dụ < 10 cái)
-      const parts = inventoryRes.data || [];
+      const parts = inventoryRes.data.content || inventoryRes.data || [];
       const lowStockCount = parts.filter(p => p.stockQuantity < 10).length;
 
       setDashboardStats({

@@ -10,7 +10,11 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Entity
-@Table(name = "customers")
+@Table(name = "customers", indexes = {
+    @Index(name = "idx_customer_name", columnList = "fullName"),
+    @Index(name = "idx_customer_phone", columnList = "phoneNumber"),
+    @Index(name = "idx_customer_email", columnList = "email")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

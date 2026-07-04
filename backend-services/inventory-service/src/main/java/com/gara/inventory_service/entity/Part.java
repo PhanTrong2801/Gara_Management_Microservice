@@ -1,11 +1,15 @@
 package com.gara.inventory_service.entity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "parts")
+@Table(name = "parts", indexes = {
+    @Index(name = "idx_part_name", columnList = "name"),
+    @Index(name = "idx_part_code", columnList = "partCode")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,7 +36,8 @@ public class Part {
     @Column(name = "min_stock_level", nullable = false)
     private Integer minStockLevel = 5; // Mức tồn kho tối thiểu để cảnh báo
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id")
     private Supplier supplier; // Nhà cung cấp
 }

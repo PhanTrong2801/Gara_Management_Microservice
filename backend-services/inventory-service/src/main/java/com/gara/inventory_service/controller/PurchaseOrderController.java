@@ -9,6 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/inventory/purchase-orders")
@@ -23,8 +27,10 @@ public class PurchaseOrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PurchaseOrder>> getAllPurchaseOrders() {
-        return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders());
+    public ResponseEntity<Page<PurchaseOrder>> getAllPurchaseOrders(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10, sort = "orderDate", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders(search, pageable));
     }
 
     @GetMapping("/{id}")

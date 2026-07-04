@@ -3,6 +3,8 @@ package com.gara.repair_service.service;
 import com.gara.repair_service.entity.Appointment;
 import com.gara.repair_service.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +25,13 @@ public class AppointmentService {
 
     public List<Appointment> getAllAppointments() {
         return appointmentRepository.findAll();
+    }
+
+    public Page<Appointment> getAllAppointments(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isBlank()) {
+            return appointmentRepository.findAll(pageable);
+        }
+        return appointmentRepository.searchAppointments(keyword, pageable);
     }
 
     public Appointment updateAppointmentStatus(String id, String status) {

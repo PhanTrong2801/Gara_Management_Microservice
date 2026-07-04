@@ -36,7 +36,8 @@ const AppointmentManagement = () => {
 
             // 1. Lấy danh sách lịch hẹn
             const res = await axios.get('http://localhost:8080/api/repair/appointments', { headers });
-            const sortedData = res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const dataList = res.data.content || res.data || [];
+            const sortedData = dataList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             setAppointments(sortedData);
 
             // 2. Lấy thông tin khách hàng để map tên
@@ -44,7 +45,7 @@ const AppointmentManagement = () => {
             if (customerIds.length > 0) {
                 const customersRes = await axios.get('http://localhost:8080/api/customers', { headers });
                 const map = {};
-                customersRes.data.forEach(c => {
+                (customersRes.data.content || customersRes.data || []).forEach(c => {
                     map[c.id] = c;
                 });
                 setCustomersMap(map);

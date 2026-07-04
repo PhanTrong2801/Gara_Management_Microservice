@@ -7,6 +7,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/inventory/suppliers")
@@ -21,7 +25,9 @@ public class SupplierController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Supplier>> getAllSuppliers() {
-        return ResponseEntity.ok(supplierService.getAllSuppliers());
+    public ResponseEntity<Page<Supplier>> getAllSuppliers(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(supplierService.getAllSuppliers(search, pageable));
     }
 }

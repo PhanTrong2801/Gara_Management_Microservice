@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -27,10 +29,9 @@ public class InventoryTransactionService {
         transactionRepository.save(transaction);
     }
 
-    public List<InventoryTransactionDTO> getTransactionsByPartId(Long partId) {
-        return transactionRepository.findByPartIdOrderByTransactionDateDesc(partId).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    public Page<InventoryTransactionDTO> getTransactionsByPartId(Long partId, Pageable pageable) {
+        return transactionRepository.findByPartIdOrderByTransactionDateDesc(partId, pageable)
+                .map(this::mapToDTO);
     }
 
     private InventoryTransactionDTO mapToDTO(InventoryTransaction entity) {

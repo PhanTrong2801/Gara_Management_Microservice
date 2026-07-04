@@ -4,6 +4,9 @@ import com.gara.repair_service.dto.RepairDetailsDTO;
 import com.gara.repair_service.entity.RepairOrder;
 import com.gara.repair_service.service.RepairOrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,8 +38,10 @@ public class RepairOrderController {
     }
 
     @GetMapping("/orders")
-    public ResponseEntity<List<RepairOrder>> getAllOrders(){
-        return ResponseEntity.ok(repairOrderService.getAllOrders());
+    public ResponseEntity<Page<RepairOrder>> getAllOrders(
+            @RequestParam(required = false, defaultValue = "") String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(repairOrderService.getAllOrders(search, pageable));
     }
 
     @GetMapping("/orders/customer/{customerId}")

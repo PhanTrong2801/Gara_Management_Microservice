@@ -33,12 +33,13 @@ export default function CreateRepairOrder() {
         const fetchCustomers = async () => {
             try {
                 const response = await api.get('/customers');
-                setCustomers(response.data);
+                const customerList = response.data.content || response.data || [];
+                setCustomers(customerList);
                 
                 // Tự động tìm và chọn khách hàng nếu có truyền SĐT từ Lịch hẹn
-                if (location.state?.prefillCustomerPhone && response.data.length > 0) {
+                if (location.state?.prefillCustomerPhone && customerList.length > 0) {
                     const phone = location.state.prefillCustomerPhone;
-                    const customerMatch = response.data.find(c => c.phoneNumber === phone);
+                    const customerMatch = customerList.find(c => c.phoneNumber === phone);
                     if (customerMatch) {
                         setSelectedCustomer(customerMatch);
                         setFormData(prev => ({ ...prev, customerId: customerMatch.id }));

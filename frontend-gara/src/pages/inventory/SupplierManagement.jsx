@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Truck, Plus, X, ShoppingCart, Check, ListChecks, Search } from 'lucide-react';
 import api from '../../api/axiosConfig';
-import { useTablePagination } from '../../hooks/useTablePagination';
 import Pagination from '../../components/common/Pagination';
+import { useDebounce } from '../../hooks/useDebounce';
 
 export default function SupplierManagement() {
     const [suppliers, setSuppliers] = useState([]);
@@ -23,47 +23,65 @@ export default function SupplierManagement() {
     const [quantity, setQuantity] = useState('');
     const [unitPrice, setUnitPrice] = useState('');
 
-    const supplierTable = useTablePagination(suppliers, (s, term) => 
-        s.name.toLowerCase().includes(term) || (s.contactPhone && s.contactPhone.includes(term))
-    );
+    // Server-side pagination states
+    const [supplierPage, setSupplierPage] = useState(1);
+    const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
+    const [supplierTotalPages, setSupplierTotalPages] = useState(1);
+    const [supplierTotalItems, setSupplierTotalItems] = useState(0);
+    const debouncedSupplierSearch = useDebounce(supplierSearchTerm, 500);
 
-    const orderTable = useTablePagination(purchaseOrders, (po, term) => 
-        (po.supplier?.name && po.supplier.name.toLowerCase().includes(term)) || 
-        po.id.toString().includes(term)
-    );
+    const [orderPage, setOrderPage] = useState(1);
+    const [orderSearchTerm, setOrderSearchTerm] = useState('');
+    const [orderTotalPages, setOrderTotalPages] = useState(1);
+    const [orderTotalItems, setOrderTotalItems] = useState(0);
+    const debouncedOrderSearch = useDebounce(orderSearchTerm, 500);
 
-    useEffect(() => {
-        fetchSuppliers();
-        fetchPurchaseOrders();
-        fetchParts();
-    }, []);
 
     const fetchSuppliers = async () => {
         try {
-            const res = await api.get('/inventory/suppliers');
-            setSuppliers(res.data);
+            const res = await api.get(`/inventory/suppliers?page=${supplierPage - 1}&size=10&search=${debouncedSupplierSearch}`);
+            setSuppliers(res.data.content || []);
+            setSupplierTotalPages(res.data.totalPages || 1);
+            setSupplierTotalItems(res.data.totalElements || 0);
         } catch (err) {
             console.error(err);
+            setSuppliers([]);
         }
     };
 
     const fetchPurchaseOrders = async () => {
         try {
-            const res = await api.get('/inventory/purchase-orders');
-            setPurchaseOrders(res.data);
+            const res = await api.get(`/inventory/purchase-orders?page=${orderPage - 1}&size=10&search=${debouncedOrderSearch}`);
+            setPurchaseOrders(res.data.content || []);
+            setOrderTotalPages(res.data.totalPages || 1);
+            setOrderTotalItems(res.data.totalElements || 0);
         } catch (err) {
             console.error(err);
+            setPurchaseOrders([]);
         }
     };
 
     const fetchParts = async () => {
         try {
-            const res = await api.get('/inventory/parts');
-            setParts(res.data);
+            const res = await api.get('/inventory/parts?size=1000'); // temporary fetch all parts for dropdown
+            setParts(res.data.content || res.data || []);
         } catch (err) {
             console.error(err);
+            setParts([]);
         }
     };
+
+    useEffect(() => {
+        fetchSuppliers();
+    }, [supplierPage, debouncedSupplierSearch]);
+
+    useEffect(() => {
+        fetchPurchaseOrders();
+    }, [orderPage, debouncedOrderSearch]);
+
+    useEffect(() => {
+        fetchParts();
+    }, []);
 
     const handleCreateSupplier = async (e) => {
         e.preventDefault();
@@ -184,8 +202,8 @@ export default function SupplierManagement() {
                             <input 
                                 type="text" 
                                 placeholder="Tìm kiếm tên NCC hoặc SĐT..." 
-                                value={supplierTable.searchTerm}
-                                onChange={(e) => supplierTable.setSearchTerm(e.target.value)}
+                                value={supplierSearchTerm}
+                                onChange={(e) => {setSupplierSearchTerm(e.target.value); setSupplierPage(1);}}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow text-sm"
                             />
                         </div>
@@ -202,7 +220,7 @@ export default function SupplierManagement() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {supplierTable.currentData.map(s => (
+                            {suppliers.map(s => (
                                 <tr key={s.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 font-semibold text-gray-900">#{s.id}</td>
                                     <td className="px-6 py-4 font-medium text-blue-700">{s.name}</td>
@@ -211,16 +229,16 @@ export default function SupplierManagement() {
                                     <td className="px-6 py-4">{s.address}</td>
                                 </tr>
                             ))}
-                            {supplierTable.currentData.length === 0 && (
+                            {suppliers.length === 0 && (
                                 <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu</td></tr>
                             )}
                         </tbody>
                     </table>
                     <Pagination 
-                        currentPage={supplierTable.currentPage} 
-                        totalPages={supplierTable.totalPages} 
-                        totalItems={supplierTable.totalItems} 
-                        onPageChange={supplierTable.handlePageChange} 
+                        currentPage={supplierPage} 
+                        totalPages={supplierTotalPages} 
+                        totalItems={supplierTotalItems} 
+                        onPageChange={setSupplierPage} 
                     />
                 </div>
                 </div>
@@ -235,8 +253,8 @@ export default function SupplierManagement() {
                             <input 
                                 type="text" 
                                 placeholder="Tìm kiếm theo tên NCC hoặc mã phiếu..." 
-                                value={orderTable.searchTerm}
-                                onChange={(e) => orderTable.setSearchTerm(e.target.value)}
+                                value={orderSearchTerm}
+                                onChange={(e) => {setOrderSearchTerm(e.target.value); setOrderPage(1);}}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow text-sm"
                             />
                         </div>
@@ -254,7 +272,7 @@ export default function SupplierManagement() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {orderTable.currentData.map(po => (
+                            {purchaseOrders.map(po => (
                                 <tr key={po.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 font-bold text-gray-900">PO-{po.id}</td>
                                     <td className="px-6 py-4 font-medium text-gray-800">{po.supplier?.name}</td>
@@ -279,16 +297,16 @@ export default function SupplierManagement() {
                                     </td>
                                 </tr>
                             ))}
-                            {orderTable.currentData.length === 0 && (
+                            {purchaseOrders.length === 0 && (
                                 <tr><td colSpan="6" className="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu</td></tr>
                             )}
                         </tbody>
                     </table>
                     <Pagination 
-                        currentPage={orderTable.currentPage} 
-                        totalPages={orderTable.totalPages} 
-                        totalItems={orderTable.totalItems} 
-                        onPageChange={orderTable.handlePageChange} 
+                        currentPage={orderPage} 
+                        totalPages={orderTotalPages} 
+                        totalItems={orderTotalItems} 
+                        onPageChange={setOrderPage} 
                     />
                 </div>
                 </div>
