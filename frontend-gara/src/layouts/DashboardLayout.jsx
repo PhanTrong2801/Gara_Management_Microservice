@@ -30,6 +30,7 @@ export default function DashboardLayout() {
     { path: '/dashboard/mechanic/tasks', label: 'Trạm Sửa Chữa', icon: <Wrench className="w-5 h-5 mr-3" />, roles: ['ROLE_MECHANIC', 'MECHANIC'] },
     { path: '/dashboard/billing', label: 'Thanh toán', icon: <CreditCard className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_RECEPTIONIST', 'RECEPTIONIST'] },
     { path: '/dashboard/hr/shifts', label: 'Quản lý Ca làm', icon: <Clock className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
+    { path: '/dashboard/hr/my-schedule', label: 'Lịch làm việc của tôi', icon: <Calendar className="w-5 h-5 mr-3" />, roles: ['ROLE_RECEPTIONIST', 'RECEPTIONIST', 'ROLE_MECHANIC', 'MECHANIC'] },
   ];
 
   const menuItems = menuConfig.filter(item => item.roles.includes(userRole));
@@ -45,6 +46,8 @@ export default function DashboardLayout() {
     if (location.pathname.startsWith('/dashboard/billing')) return 'Thanh toán & Hóa đơn';
     if (location.pathname.startsWith('/dashboard/create-order')) return 'Tạo phiếu sửa chữa mới';
     if (location.pathname.startsWith('/dashboard/admin')) return 'Bảng điều khiển Quản trị';
+    if (location.pathname.startsWith('/dashboard/hr/shifts')) return 'Quản lý Nhân sự & Ca làm';
+    if (location.pathname.startsWith('/dashboard/hr/my-schedule')) return 'Lịch làm việc của tôi';
     return 'Dashboard';
   };
 

@@ -48,6 +48,14 @@ public class ScheduleController {
         return ResponseEntity.ok(scheduleService.getSchedulesBetween(startDate, endDate));
     }
 
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<List<EmployeeScheduleDto>> getSchedulesForUser(
+            @PathVariable Long userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(scheduleService.getSchedulesForUser(userId, startDate, endDate));
+    }
+
     @PostMapping
     public ResponseEntity<EmployeeScheduleDto> assignSchedule(@RequestBody EmployeeScheduleDto dto) {
         return ResponseEntity.ok(scheduleService.assignSchedule(dto));

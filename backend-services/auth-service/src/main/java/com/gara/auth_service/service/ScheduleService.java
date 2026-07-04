@@ -73,6 +73,11 @@ public class ScheduleService {
         Shift shift = shiftRepository.findById(dto.getShiftId())
                 .orElseThrow(() -> new RuntimeException("Shift not found"));
 
+        List<EmployeeSchedule> existing = scheduleRepository.findByUserIdAndShiftIdAndWorkDate(dto.getUserId(), dto.getShiftId(), dto.getWorkDate());
+        if (!existing.isEmpty()) {
+            throw new RuntimeException("Nhân viên này đã được xếp vào ca này trong ngày " + dto.getWorkDate());
+        }
+
         EmployeeSchedule schedule = new EmployeeSchedule();
         schedule.setUser(user);
         schedule.setShift(shift);
@@ -95,9 +100,9 @@ public class ScheduleService {
     }
     
     public EmployeeScheduleDto registerSchedule(Long userId, Long shiftId, LocalDate workDate) {
-        List<EmployeeSchedule> existing = scheduleRepository.findByUserIdAndWorkDate(userId, workDate);
+        List<EmployeeSchedule> existing = scheduleRepository.findByUserIdAndShiftIdAndWorkDate(userId, shiftId, workDate);
         if (!existing.isEmpty()) {
-            throw new RuntimeException("Bạn đã có lịch làm việc (hoặc đăng ký) trong ngày này.");
+            throw new RuntimeException("Bạn đã đăng ký ca này trong ngày " + workDate + " rồi.");
         }
 
         User user = userRepository.findById(userId)

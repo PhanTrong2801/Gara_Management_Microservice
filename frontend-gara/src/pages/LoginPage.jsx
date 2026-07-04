@@ -16,6 +16,16 @@ export default function LoginPage(){
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('role', response.data.role);
             localStorage.setItem('username', response.data.username);
+
+            // Trích xuất userId từ token và lưu lại
+            try {
+                const payload = JSON.parse(atob(response.data.token.split('.')[1]));
+                if (payload.userId) {
+                    localStorage.setItem('userId', payload.userId);
+                }
+            } catch (e) {
+                console.error("Không thể giải mã token", e);
+            }
             
             if (response.data.role === 'CUSTOMER' || response.data.role === 'ROLE_CUSTOMER') {
                 navigate('/customer');

@@ -12,9 +12,10 @@ export default function ShiftManagement() {
   // Modal State for Assigning Shift
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
-  // For defining a new shift type
   const [newShift, setNewShift] = useState({ shiftName: '', startTime: '', endTime: '', description: '' });
   const [editingShift, setEditingShift] = useState(null);
+  const [shiftError, setShiftError] = useState(null);
+  const [shiftSuccess, setShiftSuccess] = useState(null);
 
   // For assigning a shift
   const [newSchedule, setNewSchedule] = useState({ 
@@ -23,6 +24,7 @@ export default function ShiftManagement() {
     workDate: new Date().toISOString().split('T')[0], 
     note: '' 
   });
+  const [assignError, setAssignError] = useState(null);
 
   // Start Date / End Date for Week View
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
@@ -95,6 +97,8 @@ export default function ShiftManagement() {
 
   const handleCreateShift = async (e) => {
     e.preventDefault();
+    setShiftError(null);
+    setShiftSuccess(null);
     try {
       const payload = {
         ...newShift,
@@ -104,14 +108,17 @@ export default function ShiftManagement() {
       await api.post('/auth/schedules/shifts', payload);
       setNewShift({ shiftName: '', startTime: '', endTime: '', description: '' });
       fetchShifts();
-      alert("Tạo ca làm việc thành công!");
+      setShiftSuccess("Tạo ca làm việc thành công!");
+      setTimeout(() => setShiftSuccess(null), 3000);
     } catch (error) {
-      alert("Có lỗi xảy ra khi tạo ca!");
+      setShiftError(error.response?.data?.message || error.response?.data || "Có lỗi xảy ra khi tạo ca!");
     }
   };
 
   const handleUpdateShift = async (e) => {
     e.preventDefault();
+    setShiftError(null);
+    setShiftSuccess(null);
     try {
       const payload = {
         ...editingShift,
@@ -121,9 +128,10 @@ export default function ShiftManagement() {
       await api.put(`/auth/schedules/shifts/${editingShift.id}`, payload);
       setEditingShift(null);
       fetchShifts();
-      alert("Cập nhật ca làm việc thành công!");
+      setShiftSuccess("Cập nhật ca làm việc thành công!");
+      setTimeout(() => setShiftSuccess(null), 3000);
     } catch (error) {
-      alert("Có lỗi xảy ra khi cập nhật ca!");
+      setShiftError(error.response?.data?.message || error.response?.data || "Có lỗi xảy ra khi cập nhật ca!");
     }
   };
 
@@ -140,14 +148,19 @@ export default function ShiftManagement() {
 
   const handleAssignSchedule = async (e) => {
     e.preventDefault();
-    if (!newSchedule.userId || !newSchedule.shiftId || !newSchedule.workDate) return alert("Vui lòng điền đủ thông tin");
+    setAssignError(null);
+    if (!newSchedule.userId || !newSchedule.shiftId || !newSchedule.workDate) {
+      setAssignError("Vui lòng điền đủ thông tin");
+      return;
+    }
     try {
       await api.post('/auth/schedules', newSchedule);
       fetchSchedules();
       setNewSchedule({ userId: '', shiftId: '', workDate: new Date().toISOString().split('T')[0], note: '' });
       setIsAssignModalOpen(false);
     } catch (error) {
-      alert("Lỗi khi phân công ca!");
+      const msg = error.response?.data?.message || error.response?.data || "Lỗi khi phân công ca!";
+      setAssignError(typeof msg === 'string' ? msg : "Đã xảy ra lỗi hệ thống khi phân công.");
     }
   };
 
@@ -231,6 +244,7 @@ export default function ShiftManagement() {
   };
 
   const openQuickAssign = (date, shiftId) => {
+    setAssignError(null);
     setNewSchedule({
       userId: '',
       shiftId: shiftId,
@@ -249,7 +263,10 @@ export default function ShiftManagement() {
         </div>
         {activeTab === 'schedules' && (
           <button 
-            onClick={() => setIsAssignModalOpen(true)}
+            onClick={() => {
+              setAssignError(null);
+              setIsAssignModalOpen(true);
+            }}
             className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition flex items-center shadow-lg shadow-blue-500/20"
           >
             <Plus className="w-5 h-5 mr-2" /> Phân Công Ca
@@ -290,6 +307,18 @@ export default function ShiftManagement() {
               {editingShift ? 'Chỉnh Sửa Ca Mẫu' : 'Tạo Ca Mới'}
             </h2>
             <form onSubmit={editingShift ? handleUpdateShift : handleCreateShift} className="space-y-4">
+              {shiftError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <span>{shiftError}</span>
+                </div>
+              )}
+              {shiftSuccess && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span>{shiftSuccess}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Tên Ca (VD: Ca Sáng)</label>
                 <input 
@@ -611,6 +640,13 @@ export default function ShiftManagement() {
 
             {/* Modal Body */}
             <form onSubmit={handleAssignSchedule} className="p-6 space-y-4">
+              
+              {assignError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                  <span>{assignError}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Ngày làm việc</label>
                 <input 

@@ -35,7 +35,8 @@ export default function RepairManagement() {
     try {
       setLoading(true);
       const response = await api.get('/repair/orders');
-      const sortedData = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const dataArray = response.data.content || response.data || [];
+      const sortedData = dataArray.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setOrders(sortedData);
     } catch (error) {
       console.error("Lỗi khi tải danh sách:", error);
