@@ -76,6 +76,14 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: gara-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - gara-network
+
 
 
   eureka-service:
@@ -133,6 +141,7 @@ services:
       - "8080:8080"
     environment:
       - JWT_SECRET=${JWT_SECRET}
+      - SPRING_DATA_REDIS_HOST=gara-redis
     logging:
       driver: loki
       options:
@@ -155,6 +164,7 @@ services:
     environment: # <--- Bổ sung khối này
       - SPRING_MONGODB_URI=${MONGO_REPAIR_DB_URI}
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - SPRING_DATA_REDIS_HOST=gara-redis
     logging:
       driver: loki
       options:
@@ -182,6 +192,7 @@ services:
       # Biến này sẽ đè nát chữ 'localhost' trong file application.yml, ép nó gọi vào container postgres-db
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/customer_vehicle_db
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - SPRING_DATA_REDIS_HOST=gara-redis
     logging:
       driver: loki
       options:
@@ -213,6 +224,7 @@ services:
       # Ép Eureka Client đăng ký thông qua tên container eureka-service
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - SPRING_DATA_REDIS_HOST=gara-redis
     logging:
       driver: loki
       options:

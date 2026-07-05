@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class CustomerService {
 
     // 1. Đăng ký khách hàng mới
     @Transactional
+    @CacheEvict(value = {"customer_by_id", "customer_by_userid"}, allEntries = true)
     public Customer createCustomer(CustomerDTO dto){
         if (customerRepository.findByPhoneNumber(dto.getPhoneNumber()).isPresent()){
             throw new RuntimeException("Số điện thoại này đã tồn tại trong hệ thống!");
@@ -39,6 +42,7 @@ public class CustomerService {
     }
 
     @Transactional
+    @CacheEvict(value = {"customer_by_id", "customer_by_userid"}, allEntries = true)
     public Customer createInternalCustomer(InternalCustomerDTO dto) {
         if (dto.getPhoneNumber() != null && customerRepository.findByPhoneNumber(dto.getPhoneNumber()).isPresent()){
             throw new RuntimeException("Số điện thoại này đã tồn tại trong hệ thống!");
@@ -79,11 +83,13 @@ public class CustomerService {
 
 
     // 3. Lấy thông tin chi tiết khách hàng (Bao gồm danh sách xe của họ)
+    @Cacheable(value = "customer_by_id", key = "#id")
     public Customer getCustomerById(Long id){
         return customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng sở hữu có ID: "+id));
     }
 
+    @Cacheable(value = "customer_by_userid", key = "#userId")
     public Customer getCustomerByUserId(Long userId){
         return customerRepository.findByUserId(userId)
                 .orElseGet(() -> {
@@ -106,6 +112,7 @@ public class CustomerService {
     }
 
     @Transactional
+    @CacheEvict(value = {"customer_by_id", "customer_by_userid"}, allEntries = true)
     public Customer updateCustomer(Long id, CustomerDTO dto) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
