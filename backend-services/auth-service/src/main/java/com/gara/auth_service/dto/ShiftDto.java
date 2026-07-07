@@ -10,4 +10,6 @@ public class ShiftDto {
     private LocalTime startTime;
     private LocalTime endTime;
     private String description;
+    private Integer maxMechanics;
+    private Integer maxCashiers;
 }

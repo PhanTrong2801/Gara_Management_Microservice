@@ -15,7 +15,8 @@ class ScheduleRegistrationScreen extends StatefulWidget {
 class _ScheduleRegistrationScreenState extends State<ScheduleRegistrationScreen> {
   DateTime _selectedDate = DateTime.now();
   List<Shift> _shifts = [];
-  List<EmployeeSchedule> _mySchedules = [];
+  List<EmployeeSchedule> _allSchedules = [];
+  List<DailyShiftConfig> _dailyConfigs = [];
   bool _isLoading = true;
 
   @override
@@ -32,11 +33,13 @@ class _ScheduleRegistrationScreenState extends State<ScheduleRegistrationScreen>
       // Fetch schedules for the current month
       final startOfMonth = DateTime(_selectedDate.year, _selectedDate.month, 1);
       final endOfMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
-      final schedules = await ScheduleService.getMySchedules(startOfMonth, endOfMonth);
+      final schedules = await ScheduleService.getAllSchedules(startOfMonth, endOfMonth);
+      final configs = await ScheduleService.getDailyConfigs(startOfMonth, endOfMonth);
       
       setState(() {
         _shifts = shifts;
-        _mySchedules = schedules;
+        _allSchedules = schedules;
+        _dailyConfigs = configs;
         _isLoading = false;
       });
     } catch (e) {
@@ -75,7 +78,26 @@ class _ScheduleRegistrationScreenState extends State<ScheduleRegistrationScreen>
     } catch (e) {
       if (mounted) Navigator.pop(context); // close dialog
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                SizedBox(width: 8),
+                Text('Thông báo'),
+              ],
+            ),
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Đóng'),
+              )
+            ],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          ),
+        );
       }
     }
   }
@@ -173,8 +195,18 @@ class _ScheduleRegistrationScreenState extends State<ScheduleRegistrationScreen>
       itemBuilder: (context, index) {
         final shift = _shifts[index];
         
+        // Cấu hình ghi đè (nếu có)
+        final overrideConfig = _dailyConfigs.where((c) => c.shiftId == shift.id && c.workDate == selectedDateStr).firstOrNull;
+        final maxMechanics = overrideConfig != null ? overrideConfig.maxMechanics : shift.maxMechanics;
+        final maxCashiers = overrideConfig != null ? overrideConfig.maxCashiers : shift.maxCashiers;
+
+        // Số lượng hiện tại
+        final shiftSchedules = _allSchedules.where((s) => s.shiftId == shift.id && s.workDate == selectedDateStr && s.status != 'REJECTED');
+        final currentMechanics = shiftSchedules.where((s) => s.roleName == 'MECHANIC' || s.roleName == 'ROLE_MECHANIC').length;
+        final currentCashiers = shiftSchedules.where((s) => s.roleName == 'RECEPTIONIST' || s.roleName == 'CASHIER').length;
+
         // Find if user is registered for this shift on selected date
-        final schedule = _mySchedules.where((s) => 
+        final schedule = _allSchedules.where((s) => 
           s.shiftId == shift.id && 
           s.workDate == selectedDateStr &&
           s.userId == currentUserId
@@ -200,9 +232,40 @@ class _ScheduleRegistrationScreenState extends State<ScheduleRegistrationScreen>
                         children: [
                           const Icon(Icons.access_time, size: 16, color: Colors.grey),
                           const SizedBox(width: 4),
-                          Text('${shift.startTime} - ${shift.endTime}', style: const TextStyle(color: Colors.grey)),
+                          Text('${shift.startTime.substring(0,5)} - ${shift.endTime.substring(0,5)}', style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue.shade100)
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '👨‍🔧 Thợ: $currentMechanics/$maxMechanics',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: currentMechanics >= maxMechanics ? Colors.red : Colors.blue.shade700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '💁‍♀️ Lễ tân: $currentCashiers/$maxCashiers',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: currentCashiers >= maxCashiers ? Colors.red : Colors.blue.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
                     ],
                   ),
                 ),

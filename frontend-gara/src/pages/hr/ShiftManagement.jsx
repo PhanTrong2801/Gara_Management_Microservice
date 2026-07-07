@@ -8,11 +8,14 @@ export default function ShiftManagement() {
   const [users, setUsers] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [pendingSchedules, setPendingSchedules] = useState([]);
+  const [dailyConfigs, setDailyConfigs] = useState([]);
 
   // Modal State for Assigning Shift
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [dailyConfigForm, setDailyConfigForm] = useState({ shiftId: '', workDate: '', maxMechanics: 2, maxCashiers: 1, note: '' });
 
-  const [newShift, setNewShift] = useState({ shiftName: '', startTime: '', endTime: '', description: '' });
+  const [newShift, setNewShift] = useState({ shiftName: '', startTime: '', endTime: '', description: '', maxMechanics: 2, maxCashiers: 1 });
   const [editingShift, setEditingShift] = useState(null);
   const [shiftError, setShiftError] = useState(null);
   const [shiftSuccess, setShiftSuccess] = useState(null);
@@ -81,6 +84,8 @@ export default function ShiftManagement() {
     try {
       const res = await api.get(`/auth/schedules?startDate=${currentWeekStart}&endDate=${currentWeekEnd}`);
       setSchedules(res.data);
+      const confRes = await api.get(`/auth/schedules/daily-config?startDate=${currentWeekStart}&endDate=${currentWeekEnd}`);
+      setDailyConfigs(confRes.data);
     } catch (error) {
       console.error("Lỗi lấy lịch làm việc", error);
     }
@@ -106,7 +111,7 @@ export default function ShiftManagement() {
         endTime: newShift.endTime.length === 5 ? newShift.endTime + ':00' : newShift.endTime,
       };
       await api.post('/auth/schedules/shifts', payload);
-      setNewShift({ shiftName: '', startTime: '', endTime: '', description: '' });
+      setNewShift({ shiftName: '', startTime: '', endTime: '', description: '', maxMechanics: 2, maxCashiers: 1 });
       fetchShifts();
       setShiftSuccess("Tạo ca làm việc thành công!");
       setTimeout(() => setShiftSuccess(null), 3000);
@@ -224,19 +229,26 @@ export default function ShiftManagement() {
     return days;
   }, [currentWeekStart]);
 
-  // Check if a shift on a specific day is fully covered (1 Receptionist, 2 Mechanics)
-  const getShiftCoverageStatus = (date, shiftId) => {
+  // Check if a shift on a specific day is fully covered
+  const getShiftCoverageStatus = (date, shift) => {
+    const override = dailyConfigs.find(c => c.workDate === date && c.shiftId === shift.id);
+    const maxM = override ? override.maxMechanics : (shift.maxMechanics || 2);
+    const maxC = override ? override.maxCashiers : (shift.maxCashiers || 1);
+
     const shiftSchedules = schedules.filter(s => 
       s.workDate === date && 
-      s.shiftId === shiftId && 
+      s.shiftId === shift.id && 
       (s.status === 'SCHEDULED' || s.status === 'ASSIGNED_BY_MANAGER')
     );
     const mechanics = shiftSchedules.filter(s => s.roleName === 'MECHANIC' || s.roleName === 'ROLE_MECHANIC');
     const receptionists = shiftSchedules.filter(s => s.roleName === 'RECEPTIONIST');
     
-    const isOk = mechanics.length >= 2 && receptionists.length >= 1;
+    const isOk = mechanics.length >= maxM && receptionists.length >= maxC;
     return {
       isOk,
+      hasOverride: !!override,
+      maxM,
+      maxC,
       mechanicsCount: mechanics.length,
       receptionistsCount: receptionists.length,
       assigned: shiftSchedules
@@ -252,6 +264,29 @@ export default function ShiftManagement() {
       note: ''
     });
     setIsAssignModalOpen(true);
+  };
+
+  const openConfigModal = (date, shift) => {
+    const existing = dailyConfigs.find(c => c.workDate === date && c.shiftId === shift.id);
+    setDailyConfigForm({
+      shiftId: shift.id,
+      workDate: date,
+      maxMechanics: existing ? existing.maxMechanics : (shift.maxMechanics || 2),
+      maxCashiers: existing ? existing.maxCashiers : (shift.maxCashiers || 1),
+      note: existing ? existing.note : ''
+    });
+    setIsConfigModalOpen(true);
+  };
+
+  const handleSaveDailyConfig = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/auth/schedules/daily-config', dailyConfigForm);
+      setIsConfigModalOpen(false);
+      fetchSchedules();
+    } catch (error) {
+      alert("Lỗi khi lưu cấu hình ngày!");
+    }
   };
 
   return (
@@ -369,6 +404,42 @@ export default function ShiftManagement() {
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Số Lễ tân tối đa</label>
+                  <input 
+                    required 
+                    type="number" 
+                    min="0"
+                    className="w-full p-2 border border-slate-300 rounded-lg focus:outline-blue-500" 
+                    value={editingShift ? (editingShift.maxCashiers || 1) : newShift.maxCashiers} 
+                    onChange={e => {
+                      if (editingShift) {
+                        setEditingShift({...editingShift, maxCashiers: parseInt(e.target.value)});
+                      } else {
+                        setNewShift({...newShift, maxCashiers: parseInt(e.target.value)});
+                      }
+                    }} 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Số Thợ máy tối đa</label>
+                  <input 
+                    required 
+                    type="number" 
+                    min="0"
+                    className="w-full p-2 border border-slate-300 rounded-lg focus:outline-blue-500" 
+                    value={editingShift ? (editingShift.maxMechanics || 2) : newShift.maxMechanics} 
+                    onChange={e => {
+                      if (editingShift) {
+                        setEditingShift({...editingShift, maxMechanics: parseInt(e.target.value)});
+                      } else {
+                        setNewShift({...newShift, maxMechanics: parseInt(e.target.value)});
+                      }
+                    }} 
+                  />
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Mô tả thêm</label>
                 <input 
@@ -429,7 +500,17 @@ export default function ShiftManagement() {
                 <div className="text-2xl font-black text-slate-700 mb-2">
                   {shift.startTime.slice(0,5)} - {shift.endTime.slice(0,5)}
                 </div>
-                <p className="text-sm text-slate-500">{shift.description || 'Không có mô tả'}</p>
+                <div className="flex gap-3 mb-3">
+                  <div className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded text-xs font-semibold flex items-center border border-blue-100">
+                    <User className="w-3.5 h-3.5 mr-1" />
+                    Thợ: {shift.maxMechanics || 2}
+                  </div>
+                  <div className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded text-xs font-semibold flex items-center border border-purple-100">
+                    <User className="w-3.5 h-3.5 mr-1" />
+                    Lễ tân: {shift.maxCashiers || 1}
+                  </div>
+                </div>
+                <p className="text-sm text-slate-500 mt-auto">{shift.description || 'Không có mô tả'}</p>
               </div>
             ))}
           </div>
@@ -453,7 +534,7 @@ export default function ShiftManagement() {
               <span className="font-semibold text-slate-800 bg-slate-100 px-3 py-1.5 rounded-lg text-sm">{currentWeekEnd.split('-').reverse().join('/')}</span>
             </div>
             <div className="text-xs text-slate-500 italic bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-lg">
-              💡 Định mức chuẩn/ca: 1 Lễ tân & 2 Thợ máy. Đủ chỉ tiêu = màu Xanh, thiếu = màu Đỏ.
+              💡 Định mức chuẩn tùy theo cấu hình từng ca. Đủ chỉ tiêu = màu Xanh, thiếu = màu Đỏ.
             </div>
           </div>
 
@@ -470,7 +551,7 @@ export default function ShiftManagement() {
                 {/* Shift list for this day */}
                 <div className="p-3 space-y-4 flex-1 flex flex-col justify-start">
                   {shifts.map(shift => {
-                    const status = getShiftCoverageStatus(day.date, shift.id);
+                    const status = getShiftCoverageStatus(day.date, shift);
                     return (
                       <div 
                         key={shift.id} 
@@ -480,19 +561,27 @@ export default function ShiftManagement() {
                       >
                         {/* Shift Title */}
                         <div className="flex justify-between items-center mb-1">
-                          <span className="font-bold text-xs text-slate-800 uppercase">{shift.shiftName}</span>
-                          <span className="text-[10px] text-slate-500 font-semibold bg-white px-1.5 py-0.5 rounded border">
-                            {shift.startTime.slice(0,5)}-{shift.endTime.slice(0,5)}
+                          <span className="font-bold text-xs text-slate-800 uppercase flex items-center">
+                            {shift.shiftName} 
+                            {status.hasOverride && <span title="Có cấu hình ghi đè" className="ml-1 text-amber-500 text-xs">🌟</span>}
                           </span>
+                          <div className="flex items-center space-x-1">
+                            <button onClick={() => openConfigModal(day.date, shift)} className="text-slate-400 hover:text-blue-600 bg-white border px-1 rounded shadow-sm opacity-0 group-hover:opacity-100 transition text-[10px]">
+                              ⚙️
+                            </button>
+                            <span className="text-[10px] text-slate-500 font-semibold bg-white px-1.5 py-0.5 rounded border">
+                              {shift.startTime.slice(0,5)}-{shift.endTime.slice(0,5)}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Quota Indicators */}
                         <div className="flex justify-between text-[10px] text-slate-500 mb-2 border-b border-dashed pb-1">
-                          <span className={status.receptionistsCount >= 1 ? 'text-emerald-700' : 'text-rose-600 font-bold'}>
-                            Lễ tân: {status.receptionistsCount}/1
+                          <span className={status.receptionistsCount >= status.maxC ? 'text-emerald-700' : 'text-rose-600 font-bold'}>
+                            Lễ tân: {status.receptionistsCount}/{status.maxC}
                           </span>
-                          <span className={status.mechanicsCount >= 2 ? 'text-emerald-700' : 'text-rose-600 font-bold'}>
-                            Thợ: {status.mechanicsCount}/2
+                          <span className={status.mechanicsCount >= status.maxM ? 'text-emerald-700' : 'text-rose-600 font-bold'}>
+                            Thợ: {status.mechanicsCount}/{status.maxM}
                           </span>
                         </div>
 
@@ -708,6 +797,78 @@ export default function ShiftManagement() {
                   className="w-1/2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition flex items-center justify-center shadow-lg shadow-blue-500/10"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" /> Lưu Phân Công
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Daily Shift Config */}
+      {isConfigModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 transition-all">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center px-6 py-4 bg-amber-50 border-b border-amber-100">
+              <h3 className="font-bold text-lg text-amber-800 flex items-center">
+                <span className="mr-2">🌟</span> Ghi đè Cấu hình
+              </h3>
+              <button 
+                onClick={() => setIsConfigModalOpen(false)}
+                className="p-1 rounded-lg text-amber-600 hover:bg-amber-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveDailyConfig} className="p-6 space-y-4">
+              <div className="text-sm text-slate-500 text-center mb-4">
+                Thay đổi định mức nhân sự riêng cho ngày <br/>
+                <span className="font-bold text-slate-800">{dailyConfigForm.workDate.split('-').reverse().join('/')}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Số Lễ tân</label>
+                  <input 
+                    required 
+                    type="number" min="0"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl focus:outline-amber-500 text-center font-bold text-lg" 
+                    value={dailyConfigForm.maxCashiers} 
+                    onChange={e => setDailyConfigForm({...dailyConfigForm, maxCashiers: parseInt(e.target.value)})} 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Số Thợ máy</label>
+                  <input 
+                    required 
+                    type="number" min="0"
+                    className="w-full p-2.5 border border-slate-300 rounded-xl focus:outline-amber-500 text-center font-bold text-lg" 
+                    value={dailyConfigForm.maxMechanics} 
+                    onChange={e => setDailyConfigForm({...dailyConfigForm, maxMechanics: parseInt(e.target.value)})} 
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Lý do điều chỉnh</label>
+                <input 
+                  type="text" 
+                  placeholder="Vd: Ngày lễ tăng cường..."
+                  className="w-full p-2.5 border border-slate-300 rounded-xl focus:outline-amber-500 text-sm" 
+                  value={dailyConfigForm.note || ''} 
+                  onChange={e => setDailyConfigForm({...dailyConfigForm, note: e.target.value})} 
+                />
+              </div>
+              <div className="flex space-x-3 pt-4 border-t border-slate-100 mt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setIsConfigModalOpen(false)}
+                  className="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition"
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  className="w-1/2 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-amber-500/20"
+                >
+                  Lưu Ghi đè
                 </button>
               </div>
             </form>

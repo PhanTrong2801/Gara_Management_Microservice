@@ -361,13 +361,49 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          sch.shiftName,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                            color: Color(0xFF1E293B),
-                                          ),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              sch.shiftName,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                                color: sch.status == 'REJECTED' ? Colors.grey : const Color(0xFF1E293B),
+                                                decoration: sch.status == 'REJECTED' ? TextDecoration.lineThrough : null,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            if (sch.status == 'PENDING_APPROVAL')
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.orange.shade50,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: Colors.orange.shade200),
+                                                ),
+                                                child: Text('Chờ duyệt', style: TextStyle(fontSize: 9, color: Colors.orange.shade800)),
+                                              ),
+                                            if (sch.status == 'REJECTED')
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red.shade50,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: Colors.red.shade200),
+                                                ),
+                                                child: Text('Từ chối', style: TextStyle(fontSize: 9, color: Colors.red.shade800)),
+                                              ),
+                                            if (sch.status == 'SCHEDULED')
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green.shade50,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: Colors.green.shade200),
+                                                ),
+                                                child: Text('Đã duyệt', style: TextStyle(fontSize: 9, color: Colors.green.shade800)),
+                                              ),
+                                          ],
                                         ),
                                         if (sch.note.isNotEmpty)
                                           Text(
@@ -380,7 +416,7 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
                                 }).toList(),
                               ),
                       ),
-                      if (todaySchedules.isNotEmpty)
+                      if (todaySchedules.any((s) => s.status == 'SCHEDULED'))
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(

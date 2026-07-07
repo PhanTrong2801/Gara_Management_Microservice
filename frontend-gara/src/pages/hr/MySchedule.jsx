@@ -5,6 +5,8 @@ import { Calendar, Clock, CheckCircle, AlertTriangle, X, Play, Clock3, Plus } fr
 export default function MySchedule() {
   const [shifts, setShifts] = useState([]);
   const [mySchedules, setMySchedules] = useState([]);
+  const [allSchedules, setAllSchedules] = useState([]);
+  const [dailyConfigs, setDailyConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Lấy userId từ localStorage hoặc từ JWT Token
@@ -60,7 +62,7 @@ export default function MySchedule() {
 
   useEffect(() => {
     if (userId) {
-      fetchMySchedules();
+      fetchSchedulesData();
     }
   }, [currentWeekStart, currentWeekEnd, userId]);
 
@@ -73,13 +75,19 @@ export default function MySchedule() {
     }
   };
 
-  const fetchMySchedules = async () => {
+  const fetchSchedulesData = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/auth/schedules/users/${userId}?startDate=${currentWeekStart}&endDate=${currentWeekEnd}`);
-      setMySchedules(res.data);
+      const [myRes, allRes, configRes] = await Promise.all([
+        api.get(`/auth/schedules/users/${userId}?startDate=${currentWeekStart}&endDate=${currentWeekEnd}`),
+        api.get(`/auth/schedules?startDate=${currentWeekStart}&endDate=${currentWeekEnd}`),
+        api.get(`/auth/schedules/daily-config?startDate=${currentWeekStart}&endDate=${currentWeekEnd}`)
+      ]);
+      setMySchedules(myRes.data);
+      setAllSchedules(allRes.data);
+      setDailyConfigs(configRes.data);
     } catch (error) {
-      console.error("Lỗi lấy lịch làm việc cá nhân", error);
+      console.error("Lỗi lấy dữ liệu lịch làm việc", error);
     } finally {
       setLoading(false);
     }
@@ -94,7 +102,7 @@ export default function MySchedule() {
       };
       await api.post('/auth/schedules/register', payload);
       alert("Đăng ký thành công! Vui lòng chờ quản lý duyệt.");
-      fetchMySchedules();
+      fetchSchedulesData();
     } catch (error) {
       const msg = error.response?.data?.message || error.response?.data || "Lỗi khi đăng ký ca!";
       alert(typeof msg === 'string' ? msg : "Đã xảy ra lỗi hệ thống khi đăng ký.");
@@ -178,6 +186,19 @@ export default function MySchedule() {
                 {/* Shift list for this day */}
                 <div className="p-3 space-y-4 flex-1 flex flex-col justify-start">
                   {shifts.map(shift => {
+                    // Cấu hình ghi đè
+                    const overrideConfig = dailyConfigs.find(c => c.workDate === day.date && c.shiftId === shift.id);
+                    const maxMechanics = overrideConfig ? overrideConfig.maxMechanics : (shift.maxMechanics || 2);
+                    const maxCashiers = overrideConfig ? overrideConfig.maxCashiers : (shift.maxCashiers || 1);
+
+                    // Số lượng hiện tại
+                    const shiftSchedules = allSchedules.filter(s => s.shiftId === shift.id && s.workDate === day.date && s.status !== 'REJECTED');
+                    const currentMechanics = shiftSchedules.filter(s => s.roleName === 'MECHANIC' || s.roleName === 'ROLE_MECHANIC').length;
+                    const currentCashiers = shiftSchedules.filter(s => s.roleName === 'RECEPTIONIST' || s.roleName === 'CASHIER').length;
+
+                    // Kiểm tra xem đã đầy chưa (đối với Lễ tân)
+                    const isFull = currentCashiers >= maxCashiers;
+
                     // Tìm xem user đã đăng ký/được xếp ca này chưa
                     const myShift = mySchedules.find(s => s.workDate === day.date && s.shiftId === shift.id);
                     
@@ -190,16 +211,31 @@ export default function MySchedule() {
                       >
                         {/* Shift Title */}
                         <div className="flex justify-between items-center mb-2">
-                          <span className="font-bold text-xs text-slate-800 uppercase">{shift.shiftName}</span>
+                          <span className="font-bold text-xs text-slate-800 uppercase flex items-center">
+                            {shift.shiftName}
+                            {overrideConfig && <span title="Có cấu hình ghi đè" className="ml-1 text-amber-500 text-xs">🌟</span>}
+                          </span>
                           <span className="text-[10px] text-slate-500 font-semibold bg-white px-1.5 py-0.5 rounded border">
                             {shift.startTime.slice(0,5)}-{shift.endTime.slice(0,5)}
                           </span>
                         </div>
 
+                        {/* Capacity Indicators */}
+                        <div className="flex justify-between text-[10px] text-slate-500 mb-2 border-b border-dashed border-slate-200 pb-2">
+                          <span className={currentCashiers >= maxCashiers ? 'text-rose-600 font-bold' : 'text-slate-600'}>
+                            Lễ tân: {currentCashiers}/{maxCashiers}
+                          </span>
+                          <span className={currentMechanics >= maxMechanics ? 'text-rose-600 font-bold' : 'text-slate-600'}>
+                            Thợ: {currentMechanics}/{maxMechanics}
+                          </span>
+                        </div>
+
                         {/* Registration Status or Button */}
-                        <div className="mt-auto pt-2 border-t border-dashed border-slate-200 flex justify-center items-center h-8">
+                        <div className="mt-auto pt-1 flex justify-center items-center min-h-[32px]">
                           {myShift ? (
                             getStatusBadge(myShift.status)
+                          ) : isFull ? (
+                            <span className="text-[11px] text-rose-500 font-bold italic">Đã đầy ca</span>
                           ) : (
                             <button 
                               onClick={() => handleRegisterShift(shift.id, day.date)}

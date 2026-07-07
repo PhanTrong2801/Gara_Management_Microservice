@@ -27,4 +27,10 @@ public class Shift {
 
     @Column(length = 255)
     private String description;
+
+    @Column(name = "max_mechanics", nullable = false)
+    private Integer maxMechanics = 2; // Mặc định 2 Thợ
+
+    @Column(name = "max_cashiers", nullable = false)
+    private Integer maxCashiers = 1; // Mặc định 1 Thu ngân
 }

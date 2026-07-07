@@ -14,11 +14,27 @@ class ScheduleService {
         throw Exception('Failed to load shifts');
       }
     } catch (e) {
-      throw Exception('Error: $e');
+      rethrow;
     }
   }
 
-  static Future<List<EmployeeSchedule>> getMySchedules(DateTime startDate, DateTime endDate) async {
+  static Future<List<DailyShiftConfig>> getDailyConfigs(DateTime startDate, DateTime endDate) async {
+    try {
+      final startStr = DateFormat('yyyy-MM-dd').format(startDate);
+      final endStr = DateFormat('yyyy-MM-dd').format(endDate);
+      final response = await ApiService.get('/auth/schedules/daily-config?startDate=$startStr&endDate=$endStr');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+        return data.map((json) => DailyShiftConfig.fromJson(json)).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<List<EmployeeSchedule>> getAllSchedules(DateTime startDate, DateTime endDate) async {
     try {
       final startStr = DateFormat('yyyy-MM-dd').format(startDate);
       final endStr = DateFormat('yyyy-MM-dd').format(endDate);
@@ -31,7 +47,7 @@ class ScheduleService {
         throw Exception('Failed to load schedules');
       }
     } catch (e) {
-      throw Exception('Error: $e');
+      rethrow;
     }
   }
 
@@ -48,10 +64,17 @@ class ScheduleService {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         return EmployeeSchedule.fromJson(data);
       } else {
-        throw Exception('Failed to register schedule: ${response.body}');
+        String errorMessage;
+        try {
+          final errorData = jsonDecode(utf8.decode(response.bodyBytes));
+          errorMessage = errorData['message'] ?? 'Lỗi không xác định';
+        } catch (_) {
+          errorMessage = utf8.decode(response.bodyBytes);
+        }
+        throw Exception(errorMessage);
       }
     } catch (e) {
-      throw Exception('Error: $e');
+      rethrow;
     }
   }
 }

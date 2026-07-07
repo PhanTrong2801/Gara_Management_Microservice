@@ -2,6 +2,7 @@ package com.gara.auth_service.controller;
 
 import com.gara.auth_service.dto.EmployeeScheduleDto;
 import com.gara.auth_service.dto.ShiftDto;
+import com.gara.auth_service.dto.DailyShiftConfigDto;
 import com.gara.auth_service.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -88,5 +89,19 @@ public class ScheduleController {
     @PutMapping("/{id}/reject")
     public ResponseEntity<EmployeeScheduleDto> rejectSchedule(@PathVariable Long id) {
         return ResponseEntity.ok(scheduleService.rejectSchedule(id));
+    }
+
+    // --- Daily Shift Config API ---
+    @GetMapping("/daily-config")
+    public ResponseEntity<List<DailyShiftConfigDto>> getDailyConfigs(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(scheduleService.getDailyConfigsBetween(startDate, endDate));
+    }
+
+    @PostMapping("/daily-config")
+    public ResponseEntity<DailyShiftConfigDto> upsertDailyConfig(
+            @RequestBody DailyShiftConfigDto dto) {
+        return ResponseEntity.ok(scheduleService.upsertDailyConfig(dto));
     }
 }

@@ -5,6 +5,7 @@ import com.gara.auth_service.dto.ShiftDto;
 import com.gara.auth_service.entity.EmployeeSchedule;
 import com.gara.auth_service.entity.Shift;
 import com.gara.auth_service.entity.User;
+import com.gara.auth_service.repository.DailyShiftConfigRepository;
 import com.gara.auth_service.repository.EmployeeScheduleRepository;
 import com.gara.auth_service.repository.ShiftRepository;
 import com.gara.auth_service.repository.UserRepository;
@@ -13,7 +14,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.gara.auth_service.entity.DailyShiftConfig;
+import com.gara.auth_service.dto.DailyShiftConfigDto;
 
 import com.gara.auth_service.config.RabbitMQConfig;
 import com.gara.auth_service.dto.ScheduleNotificationEvent;
@@ -27,6 +32,7 @@ public class ScheduleService {
     private final EmployeeScheduleRepository scheduleRepository;
     private final UserRepository userRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final DailyShiftConfigRepository dailyConfigRepository;
 
     // --- Shift Management ---
     public List<ShiftDto> getAllShifts() {
@@ -39,6 +45,8 @@ public class ScheduleService {
         shift.setStartTime(shiftDto.getStartTime());
         shift.setEndTime(shiftDto.getEndTime());
         shift.setDescription(shiftDto.getDescription());
+        shift.setMaxMechanics(shiftDto.getMaxMechanics() != null ? shiftDto.getMaxMechanics() : 2);
+        shift.setMaxCashiers(shiftDto.getMaxCashiers() != null ? shiftDto.getMaxCashiers() : 1);
         return mapToShiftDto(shiftRepository.save(shift));
     }
 
@@ -49,6 +57,8 @@ public class ScheduleService {
         shift.setStartTime(shiftDto.getStartTime());
         shift.setEndTime(shiftDto.getEndTime());
         shift.setDescription(shiftDto.getDescription());
+        if (shiftDto.getMaxMechanics() != null) shift.setMaxMechanics(shiftDto.getMaxMechanics());
+        if (shiftDto.getMaxCashiers() != null) shift.setMaxCashiers(shiftDto.getMaxCashiers());
         return mapToShiftDto(shiftRepository.save(shift));
     }
 
@@ -74,18 +84,49 @@ public class ScheduleService {
                 .orElseThrow(() -> new RuntimeException("Shift not found"));
 
         List<EmployeeSchedule> existing = scheduleRepository.findByUserIdAndShiftIdAndWorkDate(dto.getUserId(), dto.getShiftId(), dto.getWorkDate());
-        if (!existing.isEmpty()) {
-            throw new RuntimeException("Nhân viên này đã được xếp vào ca này trong ngày " + dto.getWorkDate());
+        EmployeeSchedule scheduleToUpdate = null;
+        for (EmployeeSchedule s : existing) {
+            if (!"REJECTED".equals(s.getStatus())) {
+                throw new RuntimeException("Nhân viên này đã được xếp vào ca này trong ngày " + dto.getWorkDate());
+            } else {
+                scheduleToUpdate = s;
+            }
         }
 
-        EmployeeSchedule schedule = new EmployeeSchedule();
-        schedule.setUser(user);
-        schedule.setShift(shift);
-        schedule.setWorkDate(dto.getWorkDate());
-        schedule.setStatus(dto.getStatus() != null ? dto.getStatus() : "ASSIGNED_BY_MANAGER");
-        schedule.setNote(dto.getNote());
+        // Determine capacity limits (override vs template)
+        int maxMechanics = shift.getMaxMechanics() == 0 ? 2 : shift.getMaxMechanics();
+        int maxCashiers = shift.getMaxCashiers() == 0 ? 1 : shift.getMaxCashiers();
+        
+        Optional<DailyShiftConfig> dailyConfig = dailyConfigRepository.findByShiftIdAndWorkDate(shift.getId(), dto.getWorkDate());
+        if (dailyConfig.isPresent()) {
+            maxMechanics = dailyConfig.get().getMaxMechanics();
+            maxCashiers = dailyConfig.get().getMaxCashiers();
+        }
 
-        EmployeeSchedule saved = scheduleRepository.save(schedule);
+        // Kiểm tra giới hạn số lượng nhân sự
+        String roleName = user.getRole().getName();
+        if ("MECHANIC".equals(roleName)) {
+            int mechanicCount = scheduleRepository.countByShiftIdAndWorkDateAndUserRoleName(shift.getId(), dto.getWorkDate(), "MECHANIC");
+            if (mechanicCount >= maxMechanics) {
+                throw new RuntimeException("Rất tiếc, Ca này đã đạt giới hạn tối đa " + maxMechanics + " Thợ.");
+            }
+        } else if ("RECEPTIONIST".equals(roleName) || "CASHIER".equals(roleName)) {
+            int cashierCount = scheduleRepository.countByShiftIdAndWorkDateAndUserRoleName(shift.getId(), dto.getWorkDate(), roleName);
+            if (cashierCount >= maxCashiers) {
+                throw new RuntimeException("Rất tiếc, Ca này đã đạt giới hạn tối đa " + maxCashiers + " " + roleName + ".");
+            }
+        }
+
+        if (scheduleToUpdate == null) {
+            scheduleToUpdate = new EmployeeSchedule();
+            scheduleToUpdate.setUser(user);
+            scheduleToUpdate.setShift(shift);
+            scheduleToUpdate.setWorkDate(dto.getWorkDate());
+        }
+        scheduleToUpdate.setStatus(dto.getStatus() != null ? dto.getStatus() : "ASSIGNED_BY_MANAGER");
+        scheduleToUpdate.setNote(dto.getNote());
+
+        EmployeeSchedule saved = scheduleRepository.save(scheduleToUpdate);
         
         // Notify user about assignment
         ScheduleNotificationEvent event = new ScheduleNotificationEvent(
@@ -101,22 +142,53 @@ public class ScheduleService {
     
     public EmployeeScheduleDto registerSchedule(Long userId, Long shiftId, LocalDate workDate) {
         List<EmployeeSchedule> existing = scheduleRepository.findByUserIdAndShiftIdAndWorkDate(userId, shiftId, workDate);
-        if (!existing.isEmpty()) {
-            throw new RuntimeException("Bạn đã đăng ký ca này trong ngày " + workDate + " rồi.");
+        EmployeeSchedule scheduleToUpdate = null;
+        for (EmployeeSchedule s : existing) {
+            if (!"REJECTED".equals(s.getStatus())) {
+                throw new RuntimeException("Bạn đã đăng ký ca này trong ngày " + workDate + " rồi.");
+            } else {
+                scheduleToUpdate = s;
+            }
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User không tìm thấy"));
         Shift shift = shiftRepository.findById(shiftId)
-                .orElseThrow(() -> new RuntimeException("Shift not found"));
+                .orElseThrow(() -> new RuntimeException("Ca làm việc không tìm thấy"));
 
-        EmployeeSchedule schedule = new EmployeeSchedule();
-        schedule.setUser(user);
-        schedule.setShift(shift);
-        schedule.setWorkDate(workDate);
-        schedule.setStatus("PENDING_APPROVAL");
+        // Determine capacity limits (override vs template)
+        int maxMechanics = shift.getMaxMechanics() == 0 ? 2 : shift.getMaxMechanics();
+        int maxCashiers = shift.getMaxCashiers() == 0 ? 1 : shift.getMaxCashiers();
+        
+        Optional<DailyShiftConfig> dailyConfig = dailyConfigRepository.findByShiftIdAndWorkDate(shift.getId(), workDate);
+        if (dailyConfig.isPresent()) {
+            maxMechanics = dailyConfig.get().getMaxMechanics();
+            maxCashiers = dailyConfig.get().getMaxCashiers();
+        }
 
-        return mapToScheduleDto(scheduleRepository.save(schedule));
+        // Kiểm tra giới hạn số lượng nhân sự
+        String roleName = user.getRole().getName();
+        if ("MECHANIC".equals(roleName)) {
+            int mechanicCount = scheduleRepository.countByShiftIdAndWorkDateAndUserRoleName(shift.getId(), workDate, "MECHANIC");
+            if (mechanicCount >= maxMechanics) {
+                throw new RuntimeException("Rất tiếc, Ca này đã đạt giới hạn tối đa " + maxMechanics + " Thợ.");
+            }
+        } else if ("RECEPTIONIST".equals(roleName) || "CASHIER".equals(roleName)) {
+            int cashierCount = scheduleRepository.countByShiftIdAndWorkDateAndUserRoleName(shift.getId(), workDate, roleName);
+            if (cashierCount >= maxCashiers) {
+                throw new RuntimeException("Rất tiếc, Ca này đã đạt giới hạn tối đa " + maxCashiers + " " + roleName + ".");
+            }
+        }
+
+        if (scheduleToUpdate == null) {
+            scheduleToUpdate = new EmployeeSchedule();
+            scheduleToUpdate.setUser(user);
+            scheduleToUpdate.setShift(shift);
+            scheduleToUpdate.setWorkDate(workDate);
+        }
+        scheduleToUpdate.setStatus("PENDING_APPROVAL");
+
+        return mapToScheduleDto(scheduleRepository.save(scheduleToUpdate));
     }
 
     public List<EmployeeScheduleDto> getPendingSchedules() {
@@ -170,6 +242,8 @@ public class ScheduleService {
         dto.setStartTime(shift.getStartTime());
         dto.setEndTime(shift.getEndTime());
         dto.setDescription(shift.getDescription());
+        dto.setMaxMechanics(shift.getMaxMechanics());
+        dto.setMaxCashiers(shift.getMaxCashiers());
         return dto;
     }
 
@@ -185,6 +259,39 @@ public class ScheduleService {
         dto.setStatus(schedule.getStatus());
         dto.setNote(schedule.getNote());
         dto.setCreatedAt(schedule.getCreatedAt());
+        return dto;
+    }
+
+    // --- Daily Shift Config Management ---
+    public List<DailyShiftConfigDto> getDailyConfigsBetween(LocalDate startDate, LocalDate endDate) {
+        return dailyConfigRepository.findByWorkDateBetween(startDate, endDate).stream()
+                .map(this::mapToDailyConfigDto).collect(Collectors.toList());
+    }
+
+    public DailyShiftConfigDto upsertDailyConfig(DailyShiftConfigDto dto) {
+        Shift shift = shiftRepository.findById(dto.getShiftId())
+                .orElseThrow(() -> new RuntimeException("Shift not found"));
+                
+        DailyShiftConfig config = dailyConfigRepository.findByShiftIdAndWorkDate(dto.getShiftId(), dto.getWorkDate())
+                .orElse(new DailyShiftConfig());
+                
+        config.setShift(shift);
+        config.setWorkDate(dto.getWorkDate());
+        config.setMaxMechanics(dto.getMaxMechanics());
+        config.setMaxCashiers(dto.getMaxCashiers());
+        config.setNote(dto.getNote());
+        
+        return mapToDailyConfigDto(dailyConfigRepository.save(config));
+    }
+
+    private DailyShiftConfigDto mapToDailyConfigDto(DailyShiftConfig config) {
+        DailyShiftConfigDto dto = new DailyShiftConfigDto();
+        dto.setId(config.getId());
+        dto.setShiftId(config.getShift().getId());
+        dto.setWorkDate(config.getWorkDate());
+        dto.setMaxMechanics(config.getMaxMechanics());
+        dto.setMaxCashiers(config.getMaxCashiers());
+        dto.setNote(config.getNote());
         return dto;
     }
 }
