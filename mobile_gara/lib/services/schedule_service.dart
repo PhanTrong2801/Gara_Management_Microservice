@@ -77,4 +77,23 @@ class ScheduleService {
       rethrow;
     }
   }
+
+  // --- Attendance QR Scan ---
+  static Future<Map<String, dynamic>> scanAttendanceQr(int userId, String qrToken) async {
+    try {
+      final body = {
+        'userId': userId,
+        'qrToken': qrToken
+      };
+      final response = await ApiService.post('/auth/attendance/scan', body);
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      if (response.statusCode == 200) {
+        return data;
+      } else {
+        throw Exception(data['error'] ?? 'Lỗi điểm danh');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

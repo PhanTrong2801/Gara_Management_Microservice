@@ -238,7 +238,7 @@ export default function ShiftManagement() {
     const shiftSchedules = schedules.filter(s => 
       s.workDate === date && 
       s.shiftId === shift.id && 
-      (s.status === 'SCHEDULED' || s.status === 'ASSIGNED_BY_MANAGER')
+      (s.status === 'SCHEDULED' || s.status === 'ASSIGNED_BY_MANAGER' || s.status === 'IN_PROGRESS' || s.status === 'LATE' || s.status === 'COMPLETED')
     );
     const mechanics = shiftSchedules.filter(s => s.roleName === 'MECHANIC' || s.roleName === 'ROLE_MECHANIC');
     const receptionists = shiftSchedules.filter(s => s.roleName === 'RECEPTIONIST');

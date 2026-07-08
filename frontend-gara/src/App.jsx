@@ -16,6 +16,7 @@ import MechanicDashboard from "./pages/repair/MechanicDashboard.jsx";
 import VNPayReturn from "./pages/billing/VNPayReturn.jsx";
 import ShiftManagement from "./pages/hr/ShiftManagement.jsx";
 import MySchedule from "./pages/hr/MySchedule.jsx";
+import AttendancePortal from "./pages/hr/AttendancePortal.jsx";
 
 // Customer Portal components
 import CustomerLayout from './layouts/CustomerLayout.jsx';
@@ -73,6 +74,7 @@ function App() {
           {/* MANAGER, ADMIN */}
           <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER']} />}>
             <Route path="hr/shifts" element={<ShiftManagement />} />
+            <Route path="hr/attendance-portal" element={<AttendancePortal />} />
           </Route>
 
           {/* RECEPTIONIST, MECHANIC */}

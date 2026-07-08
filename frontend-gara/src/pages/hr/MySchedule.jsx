@@ -131,6 +131,12 @@ export default function MySchedule() {
       case 'SCHEDULED':
       case 'ASSIGNED_BY_MANAGER':
         return <span className="flex items-center text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold border border-emerald-200"><CheckCircle className="w-3 h-3 mr-1"/> Đã xếp lịch</span>;
+      case 'IN_PROGRESS':
+        return <span className="flex items-center text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold border border-blue-200"><Play className="w-3 h-3 mr-1"/> Đang làm</span>;
+      case 'LATE':
+        return <span className="flex items-center text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-bold border border-rose-200"><AlertTriangle className="w-3 h-3 mr-1"/> Đi trễ</span>;
+      case 'COMPLETED':
+        return <span className="flex items-center text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold border border-indigo-200"><CheckCircle className="w-3 h-3 mr-1"/> Hoàn thành</span>;
       case 'REJECTED':
         return <span className="flex items-center text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-bold border border-rose-200"><X className="w-3 h-3 mr-1"/> Từ chối</span>;
       default:

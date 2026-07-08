@@ -9,6 +9,7 @@ services:
       MYSQL_DATABASE: gara_core_db
       MYSQL_USER: gara_user
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Ho_Chi_Minh
     ports:
       - "3306:3306"
     volumes:
@@ -28,6 +29,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: mongoadmin
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      TZ: Asia/Ho_Chi_Minh
     ports:
       - "27017:27017"
     volumes:
@@ -47,6 +49,7 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: customer_vehicle_db
+      TZ: Asia/Ho_Chi_Minh
     ports:
       - "5432:5432"
     volumes:
@@ -65,6 +68,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+      TZ: Asia/Ho_Chi_Minh
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -79,6 +83,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: gara-redis
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
     ports:
       - "6379:6379"
     networks:
@@ -90,6 +96,8 @@ services:
     build:
       context: ./backend-services/eureka-service
     container_name: eureka-service
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
     ports:
       - "8761:8761"
     logging:
@@ -116,6 +124,7 @@ services:
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - TZ=Asia/Ho_Chi_Minh
     logging:
       driver: loki
       options:
@@ -142,6 +151,7 @@ services:
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - SPRING_DATA_REDIS_HOST=gara-redis
+      - TZ=Asia/Ho_Chi_Minh
     logging:
       driver: loki
       options:
@@ -165,6 +175,7 @@ services:
       - SPRING_MONGODB_URI=${MONGO_REPAIR_DB_URI}
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
       - SPRING_DATA_REDIS_HOST=gara-redis
+      - TZ=Asia/Ho_Chi_Minh
     logging:
       driver: loki
       options:
@@ -193,6 +204,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/customer_vehicle_db
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
       - SPRING_DATA_REDIS_HOST=gara-redis
+      - TZ=Asia/Ho_Chi_Minh
     logging:
       driver: loki
       options:
@@ -218,13 +230,14 @@ services:
     #   - "8084:8084"
     environment:
       # Ép Spring Boot gọi vào container tên là gara-mysql trong mạng nội bộ Docker thay vì localhost
-      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/inventory_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/inventory_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
       # Ép Eureka Client đăng ký thông qua tên container eureka-service
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
       - SPRING_DATA_REDIS_HOST=gara-redis
+      - TZ=Asia/Ho_Chi_Minh
     logging:
       driver: loki
       options:
@@ -249,11 +262,12 @@ services:
     # ports:
     #   - "8085:8085"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/billing_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/billing_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - TZ=Asia/Ho_Chi_Minh
     logging:
       driver: loki
       options:
@@ -281,9 +295,10 @@ services:
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
       - FIREBASE_SERVICE_ACCOUNT_PATH=/app/firebase-service-account.json
-      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/notification_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/notification_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - TZ=Asia/Ho_Chi_Minh
     volumes:
       - ./backend-services/firebase-service-account.json:/app/firebase-service-account.json:ro
     logging:

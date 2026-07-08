@@ -8,6 +8,10 @@ class ScheduleModel {
   final String workDate;
   final String status;
   final String note;
+  final String? checkInTime;
+  final String? checkOutTime;
+  final int? lateMinutes;
+  final bool autoCheckout;
 
   ScheduleModel({
     required this.id,
@@ -19,6 +23,10 @@ class ScheduleModel {
     required this.workDate,
     required this.status,
     required this.note,
+    this.checkInTime,
+    this.checkOutTime,
+    this.lateMinutes,
+    this.autoCheckout = false,
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +40,10 @@ class ScheduleModel {
       workDate: json['workDate'] ?? '',
       status: json['status'] ?? '',
       note: json['note'] ?? '',
+      checkInTime: json['checkInTime'],
+      checkOutTime: json['checkOutTime'],
+      lateMinutes: json['lateMinutes'],
+      autoCheckout: json['autoCheckout'] == true,
     );
   }
 }

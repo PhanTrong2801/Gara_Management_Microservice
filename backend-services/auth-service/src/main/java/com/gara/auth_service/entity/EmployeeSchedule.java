@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -33,6 +34,18 @@ public class EmployeeSchedule {
     
     @Column(length = 255)
     private String note;
+
+    @Column(name = "check_in_time")
+    private LocalDateTime checkInTime;
+
+    @Column(name = "check_out_time")
+    private LocalDateTime checkOutTime;
+
+    @Column(name = "late_minutes")
+    private Integer lateMinutes;
+
+    @Column(name = "auto_checkout")
+    private Boolean autoCheckout = false;
 
     @Column(name = "created_at")
     private java.time.LocalDateTime createdAt;

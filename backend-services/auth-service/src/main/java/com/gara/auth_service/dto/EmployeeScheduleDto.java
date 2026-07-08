@@ -15,5 +15,9 @@ public class EmployeeScheduleDto {
     private LocalDate workDate;
     private String status;
     private String note;
+    private LocalDateTime checkInTime;
+    private LocalDateTime checkOutTime;
+    private Integer lateMinutes;
+    private Boolean autoCheckout;
     private LocalDateTime createdAt;
 }

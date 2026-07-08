@@ -258,6 +258,10 @@ public class ScheduleService {
         dto.setWorkDate(schedule.getWorkDate());
         dto.setStatus(schedule.getStatus());
         dto.setNote(schedule.getNote());
+        dto.setCheckInTime(schedule.getCheckInTime());
+        dto.setCheckOutTime(schedule.getCheckOutTime());
+        dto.setLateMinutes(schedule.getLateMinutes());
+        dto.setAutoCheckout(schedule.getAutoCheckout());
         dto.setCreatedAt(schedule.getCreatedAt());
         return dto;
     }
