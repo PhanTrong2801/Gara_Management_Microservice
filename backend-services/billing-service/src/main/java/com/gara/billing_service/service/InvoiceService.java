@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -121,12 +123,15 @@ public class InvoiceService {
         return savedInvoice;
     }
 
-    public List<Invoice> getAllInvoices() {
-        return invoiceRepository.findAll();
+    public Page<Invoice> getAllInvoices(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.isBlank()) {
+            return invoiceRepository.findAll(pageable);
+        }
+        return invoiceRepository.searchInvoices(keyword, pageable);
     }
 
-    public List<Invoice> getInvoicesByCustomerId(Long customerId) {
-        return invoiceRepository.findByCustomerId(customerId);
+    public Page<Invoice> getInvoicesByCustomerId(Long customerId, Pageable pageable) {
+        return invoiceRepository.findByCustomerId(customerId, pageable);
     }
 
     public Invoice getInvoiceByNumber(String invoiceNumber) {

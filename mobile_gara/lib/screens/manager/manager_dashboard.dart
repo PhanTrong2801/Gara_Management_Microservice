@@ -63,7 +63,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
       final appointmentsRes = await ApiService.get('/repair/appointments');
 
       // Fetch repair orders (Tab 3)
-      final ordersRes = await ApiService.get('/repair/orders');
+      final ordersRes = await ApiService.get('/repair/orders?size=500&sort=createdAt,desc');
 
       if (shiftsRes.statusCode == 200 &&
           schedulesRes.statusCode == 200 &&
@@ -71,11 +71,23 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
           appointmentsRes.statusCode == 200 &&
           ordersRes.statusCode == 200) {
         
-        final List shiftsData = jsonDecode(shiftsRes.body);
-        final List schedulesData = jsonDecode(schedulesRes.body);
-        final List customersData = jsonDecode(customersRes.body);
-        final List appointmentsData = jsonDecode(appointmentsRes.body);
-        final List ordersData = jsonDecode(ordersRes.body);
+        final shiftsDecoded = jsonDecode(utf8.decode(shiftsRes.bodyBytes));
+        final schedulesDecoded = jsonDecode(utf8.decode(schedulesRes.bodyBytes));
+        final customersDecoded = jsonDecode(utf8.decode(customersRes.bodyBytes));
+        final appointmentsDecoded = jsonDecode(utf8.decode(appointmentsRes.bodyBytes));
+        final ordersDecoded = jsonDecode(utf8.decode(ordersRes.bodyBytes));
+
+        List _extract(dynamic d) {
+          if (d is List) return d;
+          if (d is Map && d.containsKey('content')) return d['content'] as List;
+          return [];
+        }
+
+        final List shiftsData = _extract(shiftsDecoded);
+        final List schedulesData = _extract(schedulesDecoded);
+        final List customersData = _extract(customersDecoded);
+        final List appointmentsData = _extract(appointmentsDecoded);
+        final List ordersData = _extract(ordersDecoded);
 
         final customers = customersData.map((c) => CustomerModel.fromJson(c)).toList();
         final Map<int, CustomerModel> custMap = {for (var c in customers) c.id: c};
@@ -169,7 +181,11 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             if (loadingStaff) {
               ApiService.get('/auth/users').then((res) {
                 if (res.statusCode == 200) {
-                  final List data = jsonDecode(res.body);
+                  final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+                  List data = [];
+                  if (decoded is List) data = decoded;
+                  else if (decoded is Map && decoded.containsKey('content')) data = decoded['content'] as List;
+                  
                   final allUsers = data.map((u) => UserModel.fromJson(u)).toList();
                   final staff = allUsers.where((u) =>
                       u.role == 'MECHANIC' ||
@@ -883,15 +899,36 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
 
         Color statusColor = Colors.grey;
         String statusText = order.status;
-        if (order.status == 'RECEIVED') {
-          statusColor = Colors.orange;
-          statusText = 'Đã tiếp nhận';
-        } else if (order.status == 'REPAIRING') {
-          statusColor = Colors.blue;
-          statusText = 'Đang sửa chữa';
-        } else if (order.status == 'COMPLETED') {
-          statusColor = Colors.green;
-          statusText = 'Đã hoàn thành';
+        switch (order.status) {
+          case 'PENDING':
+          case 'RECEIVED':
+            statusColor = Colors.orange;
+            statusText = 'Đã tiếp nhận';
+            break;
+          case 'DIAGNOSING':
+            statusColor = Colors.blue;
+            statusText = 'Đang chẩn đoán';
+            break;
+          case 'QUOTING':
+            statusColor = Colors.purple;
+            statusText = 'Đang báo giá';
+            break;
+          case 'APPROVED':
+            statusColor = Colors.teal;
+            statusText = 'Đã duyệt giá';
+            break;
+          case 'REPAIRING':
+            statusColor = Colors.indigo;
+            statusText = 'Đang sửa chữa';
+            break;
+          case 'COMPLETED':
+            statusColor = Colors.green;
+            statusText = 'Đã hoàn thành';
+            break;
+          case 'CANCELLED':
+            statusColor = Colors.red;
+            statusText = 'Đã hủy';
+            break;
         }
 
         return Card(

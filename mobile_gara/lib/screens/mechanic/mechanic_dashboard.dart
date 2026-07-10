@@ -139,7 +139,7 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
     });
 
     try {
-      final response = await ApiService.get('/repair/orders');
+      final response = await ApiService.get('/repair/orders?size=500&sort=createdAt,desc');
       print('[DEBUG] repair/orders status: ${response.statusCode}');
       print('[DEBUG] repair/orders body: ${response.body.substring(0, response.body.length > 300 ? 300 : response.body.length)}');
       
@@ -832,15 +832,20 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'PENDING':
+      case 'RECEIVED':
         return Colors.orange;
       case 'DIAGNOSING':
         return Colors.blue;
       case 'QUOTING':
         return Colors.purple;
-      case 'REPAIRING':
+      case 'APPROVED':
         return Colors.teal;
+      case 'REPAIRING':
+        return Colors.indigo;
       case 'COMPLETED':
         return Colors.green;
+      case 'CANCELLED':
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -849,15 +854,20 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
   String _translateStatus(String status) {
     switch (status) {
       case 'PENDING':
+      case 'RECEIVED':
         return 'Chờ nhận xe';
       case 'DIAGNOSING':
         return 'Đang chẩn đoán';
       case 'QUOTING':
         return 'Đang báo giá';
+      case 'APPROVED':
+        return 'Đã duyệt giá';
       case 'REPAIRING':
         return 'Đang sửa chữa';
       case 'COMPLETED':
         return 'Đã hoàn thành';
+      case 'CANCELLED':
+        return 'Đã hủy';
       default:
         return status;
     }

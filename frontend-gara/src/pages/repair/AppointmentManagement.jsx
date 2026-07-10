@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useTablePagination } from '../../hooks/useTablePagination';
 import Pagination from '../../components/common/Pagination';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const AppointmentManagement = () => {
     const [appointments, setAppointments] = useState([]);
@@ -11,19 +12,12 @@ const AppointmentManagement = () => {
     const [customersMap, setCustomersMap] = useState({});
     const navigate = useNavigate();
 
-    const {
-        currentData: currentAppointments,
-        currentPage,
-        totalPages,
-        searchTerm,
-        setSearchTerm,
-        handlePageChange,
-        totalItems
-    } = useTablePagination(appointments, (appt, term) => {
-        const customer = customersMap[appt.customerId] || {};
-        const searchStr = `${customer.fullName} ${customer.phoneNumber} ${appt.description}`.toLowerCase();
-        return searchStr.includes(term);
-    });
+    // Server-side pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const debouncedSearch = useDebounce(searchTerm, 500);
 
     const role = localStorage.getItem('role') || '';
     const canCreateOrder = ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'].includes(role.toUpperCase());
@@ -35,18 +29,23 @@ const AppointmentManagement = () => {
             const headers = { Authorization: `Bearer ${token}` };
 
             // 1. Lấy danh sách lịch hẹn
-            const res = await axios.get('http://localhost:8080/api/repair/appointments', { headers });
-            const dataList = res.data.content || res.data || [];
-            const sortedData = dataList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            setAppointments(sortedData);
+            const res = await axios.get(`http://localhost:8080/api/repair/appointments?page=${currentPage - 1}&size=10&search=${debouncedSearch}&sort=createdAt,desc`, { headers });
+            const dataList = res.data.content || [];
+            setAppointments(dataList);
+            const pageMeta = res.data.page || res.data;
+            setTotalPages(pageMeta.totalPages || 1);
+            setTotalItems(pageMeta.totalElements || 0);
 
             // 2. Lấy thông tin khách hàng để map tên
-            const customerIds = [...new Set(sortedData.map(a => a.customerId))];
+            const customerIds = [...new Set(dataList.map(a => a.customerId))];
             if (customerIds.length > 0) {
-                const customersRes = await axios.get('http://localhost:8080/api/customers', { headers });
+                const customerPromises = customerIds.map(id => axios.get(`http://localhost:8080/api/customers/${id}`, { headers }));
+                const responses = await Promise.all(customerPromises);
+                
                 const map = {};
-                (customersRes.data.content || customersRes.data || []).forEach(c => {
-                    map[c.id] = c;
+                responses.forEach(res => {
+                    const c = res.data;
+                    if (c && c.id) map[c.id] = c;
                 });
                 setCustomersMap(map);
             }
@@ -59,12 +58,12 @@ const AppointmentManagement = () => {
 
     useEffect(() => {
         fetchAppointments();
-    }, []);
+    }, [currentPage, debouncedSearch]);
 
     const handleUpdateStatus = async (id, status) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:8080/api/repair/appointments/${id}/status`, 
+            await axios.put(`http://localhost:8080/api/repair/appointments/${id}/status`,
                 { status: status },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -82,21 +81,21 @@ const AppointmentManagement = () => {
             alert("Không tìm thấy thông tin khách hàng, không thể tạo phiếu.");
             return;
         }
-        
+
         // Điều hướng sang trang Tạo phiếu sửa chữa, truyền sẵn dữ liệu
-        navigate('/dashboard/create-order', { 
-            state: { 
+        navigate('/dashboard/create-order', {
+            state: {
                 prefillCustomerPhone: customer.phoneNumber,
                 prefillDescription: appt.description
-            } 
+            }
         });
     };
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'PENDING': return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold flex items-center w-max"><Clock size={14} className="mr-1"/> Chờ xác nhận</span>;
-            case 'CONFIRMED': return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold flex items-center w-max"><CheckCircle size={14} className="mr-1"/> Đã xác nhận</span>;
-            case 'CANCELLED': return <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold flex items-center w-max"><XCircle size={14} className="mr-1"/> Đã hủy</span>;
+            case 'PENDING': return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold flex items-center w-max"><Clock size={14} className="mr-1" /> Chờ xác nhận</span>;
+            case 'CONFIRMED': return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold flex items-center w-max"><CheckCircle size={14} className="mr-1" /> Đã xác nhận</span>;
+            case 'CANCELLED': return <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold flex items-center w-max"><XCircle size={14} className="mr-1" /> Đã hủy</span>;
             default: return <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-bold">{status}</span>;
         }
     };
@@ -122,7 +121,10 @@ const AppointmentManagement = () => {
                             placeholder="Tìm kiếm theo tên, SĐT khách hoặc mô tả..."
                             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                             value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
+                            onChange={e => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
                         />
                         <Search className="absolute left-3 top-2.5 text-slate-400" size={20} />
                     </div>
@@ -140,14 +142,14 @@ const AppointmentManagement = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {currentAppointments.length === 0 ? (
+                            {appointments.length === 0 ? (
                                 <tr>
                                     <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
                                         Không tìm thấy lịch hẹn nào.
                                     </td>
                                 </tr>
                             ) : (
-                                currentAppointments.map((appt) => {
+                                appointments.map((appt) => {
                                     const customer = customersMap[appt.customerId] || {};
                                     return (
                                         <tr key={appt.id} className="hover:bg-slate-50 transition-colors">
@@ -170,13 +172,13 @@ const AppointmentManagement = () => {
                                             <td className="px-6 py-4 text-right space-x-2">
                                                 {appt.status === 'PENDING' && (
                                                     <>
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleUpdateStatus(appt.id, 'CONFIRMED')}
                                                             className="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md text-sm font-medium transition"
                                                         >
                                                             Xác nhận
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             onClick={() => handleUpdateStatus(appt.id, 'CANCELLED')}
                                                             className="text-slate-600 bg-slate-200 hover:bg-slate-300 px-3 py-1.5 rounded-md text-sm font-medium transition"
                                                         >
@@ -185,11 +187,11 @@ const AppointmentManagement = () => {
                                                     </>
                                                 )}
                                                 {appt.status === 'CONFIRMED' && canCreateOrder && (
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleCreateRepairOrder(appt)}
                                                         className="text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-md text-sm font-medium transition flex items-center justify-center ml-auto"
                                                     >
-                                                        <FileText size={16} className="mr-1"/> Tạo Phiếu
+                                                        <FileText size={16} className="mr-1" /> Tạo Phiếu
                                                     </button>
                                                 )}
                                                 {appt.status === 'CANCELLED' && (
@@ -203,11 +205,11 @@ const AppointmentManagement = () => {
                         </tbody>
                     </table>
                 </div>
-                <Pagination 
-                    currentPage={currentPage} 
-                    totalPages={totalPages} 
-                    totalItems={totalItems} 
-                    onPageChange={handlePageChange} 
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalItems}
+                    onPageChange={setCurrentPage}
                 />
             </div>
         </div>

@@ -35,7 +35,14 @@ class _CustomerBillingScreenState extends State<CustomerBillingScreen> {
       print('[DEBUG] customer invoices response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        List data = [];
+        if (decoded is List) {
+          data = decoded;
+        } else if (decoded is Map && decoded.containsKey('content')) {
+          data = decoded['content'] as List;
+        }
+
         setState(() {
           _invoices = data.map((i) => InvoiceModel.fromJson(i)).toList();
           // Sắp xếp hóa đơn mới nhất lên đầu

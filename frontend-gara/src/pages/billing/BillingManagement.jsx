@@ -4,11 +4,19 @@ import api from '../../api/axiosConfig';
 import InvoiceDetailsModal from './InvoiceDetailsModal';
 import { useTablePagination } from '../../hooks/useTablePagination';
 import Pagination from '../../components/common/Pagination';
+import { useDebounce } from '../../hooks/useDebounce';
 
 export default function BillingManagement() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('ALL');
+
+  // Server-side pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const debouncedSearch = useDebounce(searchTerm, 500);
   
   // State cho Modal Hóa đơn
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -16,15 +24,16 @@ export default function BillingManagement() {
 
   useEffect(() => {
     fetchInvoices();
-  }, []);
+  }, [currentPage, debouncedSearch]);
 
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/billing/invoices');
-      // Sắp xếp hóa đơn mới nhất lên đầu (theo id giảm dần)
-      const sorted = response.data.sort((a, b) => b.id - a.id);
-      setInvoices(sorted);
+      const response = await api.get(`/billing/invoices?page=${currentPage - 1}&size=10&search=${debouncedSearch}&sort=createdAt,desc`);
+      setInvoices(response.data.content || []);
+      const pageMeta = response.data.page || response.data;
+      setTotalPages(pageMeta.totalPages || 1);
+      setTotalItems(pageMeta.totalElements || 0);
     } catch (error) {
       console.error('Lỗi khi tải hóa đơn:', error);
     } finally {
@@ -52,19 +61,6 @@ export default function BillingManagement() {
     if (filterStatus === 'ALL') return invoices;
     return invoices.filter(i => i.status === filterStatus);
   }, [invoices, filterStatus]);
-
-  const {
-      currentData: currentInvoices,
-      currentPage,
-      totalPages,
-      searchTerm,
-      setSearchTerm,
-      handlePageChange,
-      totalItems
-  } = useTablePagination(statusFilteredInvoices, (inv, term) => {
-      return inv.invoiceNumber.toLowerCase().includes(term) ||
-             inv.repairOrderNumber.toLowerCase().includes(term);
-  });
 
   if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Đang đồng bộ dữ liệu hóa đơn...</div>;
 
@@ -113,7 +109,10 @@ export default function BillingManagement() {
             type="text"
             placeholder="Tìm theo mã hóa đơn, mã phiếu sửa..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+               setSearchTerm(e.target.value);
+               setCurrentPage(1);
+            }}
             className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-200 outline-none"
           />
         </div>
@@ -141,10 +140,10 @@ export default function BillingManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {currentInvoices.length === 0 ? (
+            {statusFilteredInvoices.length === 0 ? (
               <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-400">Không có hóa đơn nào.</td></tr>
             ) : (
-              currentInvoices.map((inv) => (
+              statusFilteredInvoices.map((inv) => (
                 <tr key={inv.id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4 font-semibold text-gray-800">{inv.invoiceNumber}</td>
                   <td className="px-6 py-4 text-gray-600">{inv.repairOrderNumber}</td>
@@ -188,7 +187,7 @@ export default function BillingManagement() {
           currentPage={currentPage} 
           totalPages={totalPages} 
           totalItems={totalItems} 
-          onPageChange={handlePageChange} 
+          onPageChange={setCurrentPage} 
       />
 
       {/* Modal Xem chi tiết và In hóa đơn */}

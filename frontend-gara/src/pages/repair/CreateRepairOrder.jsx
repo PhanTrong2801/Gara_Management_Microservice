@@ -35,7 +35,7 @@ export default function CreateRepairOrder() {
                 const response = await api.get('/customers');
                 const customerList = response.data.content || response.data || [];
                 setCustomers(customerList);
-                
+
                 // Tự động tìm và chọn khách hàng nếu có truyền SĐT từ Lịch hẹn
                 if (location.state?.prefillCustomerPhone && customerList.length > 0) {
                     const phone = location.state.prefillCustomerPhone;
@@ -72,8 +72,8 @@ export default function CreateRepairOrder() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const filteredCustomers = customers.filter(c => 
-        c.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filteredCustomers = customers.filter(c =>
+        c.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.phoneNumber.includes(searchQuery)
     );
 
@@ -113,11 +113,11 @@ export default function CreateRepairOrder() {
                     {/* Thông tin chủ xe & Xe */}
                     <div className="relative" ref={dropdownRef}>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Khách hàng (Tìm kiếm)</label>
-                        <div 
+                        <div
                             className="relative w-full px-4 py-2 border rounded-lg focus-within:ring-2 focus-within:ring-blue-500 bg-white flex items-center justify-between cursor-text"
                             onClick={() => setIsDropdownOpen(true)}
                         >
-                            <input 
+                            <input
                                 type="text"
                                 className="w-full outline-none text-sm"
                                 placeholder={selectedCustomer ? `${selectedCustomer.fullName} - ${selectedCustomer.phoneNumber}` : "Nhập tên hoặc SĐT..."}
@@ -137,8 +137,8 @@ export default function CreateRepairOrder() {
                                     <li className="px-4 py-3 text-sm text-gray-500">Không tìm thấy khách hàng.</li>
                                 ) : (
                                     filteredCustomers.map(c => (
-                                        <li 
-                                            key={c.id} 
+                                        <li
+                                            key={c.id}
                                             onClick={() => handleCustomerChange(c.id)}
                                             className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0"
                                         >
@@ -154,10 +154,10 @@ export default function CreateRepairOrder() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Xe (Biển số)</label>
-                        <select 
-                            name="carId" 
-                            required 
-                            value={formData.carId} 
+                        <select
+                            name="carId"
+                            required
+                            value={formData.carId}
                             onChange={handleChange}
                             disabled={!selectedCustomer}
                             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-400"
@@ -173,12 +173,12 @@ export default function CreateRepairOrder() {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Số Km hiện tại (ODO)</label>
                         <input type="number" name="odo" required value={formData.odo} onChange={handleChange}
-                               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="VD: 45000" />
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="VD: 45000" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Mức nhiên liệu</label>
                         <select name="fuelLevel" value={formData.fuelLevel} onChange={handleChange}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                             <option value="25%">25% (Sắp hết)</option>
                             <option value="50%">50% (Nửa bình)</option>
                             <option value="75%">75% (Gần đầy)</option>
@@ -190,18 +190,18 @@ export default function CreateRepairOrder() {
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Tình trạng vỏ xe (Ghi chú vết xước, móp...)</label>
                     <textarea name="scratches" rows="3" value={formData.scratches} onChange={handleChange}
-                              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                              placeholder="VD: Xước nhẹ cản trước bên phụ..."></textarea>
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="VD: Xước nhẹ cản trước bên phụ..."></textarea>
                 </div>
 
                 <div className="flex justify-end space-x-4 pt-4 border-t">
                     <button type="button" onClick={() => navigate('/dashboard')}
-                            className="flex items-center px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
-                        <XCircle className="w-5 h-5 mr-2"/> Hủy
+                        className="flex items-center px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                        <XCircle className="w-5 h-5 mr-2" /> Hủy
                     </button>
                     <button type="submit" disabled={loading}
-                            className="flex items-center px-6 py-2 text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition disabled:opacity-50">
-                        <Save className="w-5 h-5 mr-2"/> {loading ? 'Đang lưu...' : 'Lưu Phiếu'}
+                        className="flex items-center px-6 py-2 text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition disabled:opacity-50">
+                        <Save className="w-5 h-5 mr-2" /> {loading ? 'Đang lưu...' : 'Lưu Phiếu'}
                     </button>
                 </div>
             </form>

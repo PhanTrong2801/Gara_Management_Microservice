@@ -73,7 +73,8 @@ export default function ShiftManagement() {
   const fetchUsers = async () => {
     try {
       const res = await api.get('/auth/users');
-      const staff = res.data.filter(u => u.role === 'MECHANIC' || u.role === 'RECEPTIONIST' || u.role === 'ROLE_MECHANIC');
+      const data = Array.isArray(res.data) ? res.data : (res.data?.content || []);
+      const staff = data.filter(u => u.role === 'MECHANIC' || u.role === 'RECEPTIONIST' || u.role === 'ROLE_MECHANIC');
       setUsers(staff);
     } catch (error) {
       console.error("Lỗi lấy danh sách nhân viên", error);
@@ -83,9 +84,12 @@ export default function ShiftManagement() {
   const fetchSchedules = async () => {
     try {
       const res = await api.get(`/auth/schedules?startDate=${currentWeekStart}&endDate=${currentWeekEnd}`);
-      setSchedules(res.data);
+      const scheduleData = Array.isArray(res.data) ? res.data : (res.data?.content || []);
+      setSchedules(scheduleData);
+      
       const confRes = await api.get(`/auth/schedules/daily-config?startDate=${currentWeekStart}&endDate=${currentWeekEnd}`);
-      setDailyConfigs(confRes.data);
+      const configData = Array.isArray(confRes.data) ? confRes.data : (confRes.data?.content || []);
+      setDailyConfigs(configData);
     } catch (error) {
       console.error("Lỗi lấy lịch làm việc", error);
     }
@@ -253,6 +257,32 @@ export default function ShiftManagement() {
       receptionistsCount: receptionists.length,
       assigned: shiftSchedules
     };
+  };
+
+  // Get attendance status badge for employee in the weekly grid
+  const getEmployeeStatusIndicator = (emp) => {
+    switch (emp.status) {
+      case 'IN_PROGRESS':
+        return <span className="inline-flex items-center text-[8px] bg-blue-50 text-blue-600 px-1 py-0.5 rounded font-bold border border-blue-100">Đang làm</span>;
+      case 'LATE':
+        return (
+          <span className="inline-flex items-center text-[8px] bg-rose-50 text-rose-600 px-1 py-0.5 rounded font-bold border border-rose-100">
+            Trễ {emp.lateMinutes ? `${emp.lateMinutes}p` : ''}
+          </span>
+        );
+      case 'COMPLETED':
+        if (emp.autoCheckout) {
+          return <span className="inline-flex items-center text-[8px] bg-amber-50 text-amber-600 px-1 py-0.5 rounded font-bold border border-amber-100">Quên ra ca</span>;
+        }
+        return <span className="inline-flex items-center text-[8px] bg-emerald-50 text-emerald-600 px-1 py-0.5 rounded font-bold border border-emerald-100">Đã ra ca</span>;
+      default: {
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (emp.workDate < todayStr) {
+          return <span className="inline-flex items-center text-[8px] bg-slate-100 text-slate-500 px-1 py-0.5 rounded font-bold border border-slate-200">Vắng mặt</span>;
+        }
+        return <span className="inline-flex items-center text-[8px] bg-slate-50 text-slate-400 px-1 py-0.5 rounded font-bold border border-slate-100">Chưa vào</span>;
+      }
+    }
   };
 
   const openQuickAssign = (date, shiftId) => {
@@ -594,8 +624,11 @@ export default function ShiftManagement() {
                               <div key={emp.id} className="flex justify-between items-center bg-white px-2 py-1 rounded shadow-xs text-xs border border-slate-100 group/item hover:border-blue-400 transition">
                                 <div className="truncate pr-1">
                                   <div className="font-semibold text-slate-700 truncate">{emp.fullName}</div>
-                                  <div className="text-[9px] text-slate-400 uppercase tracking-wider">
-                                    {emp.roleName === 'MECHANIC' || emp.roleName === 'ROLE_MECHANIC' ? 'Thợ' : 'Lễ tân'}
+                                  <div className="flex items-center space-x-1.5 mt-0.5">
+                                    <span className="text-[9px] text-slate-400 uppercase tracking-wider">
+                                      {emp.roleName === 'MECHANIC' || emp.roleName === 'ROLE_MECHANIC' ? 'Thợ' : 'Lễ tân'}
+                                    </span>
+                                    {getEmployeeStatusIndicator(emp)}
                                   </div>
                                 </div>
                                 <button 

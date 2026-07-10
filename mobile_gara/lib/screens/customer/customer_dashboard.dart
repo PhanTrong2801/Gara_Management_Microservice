@@ -82,19 +82,27 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
 
   Future<void> _fetchDashboardStats(int customerId) async {
     try {
+      List _extract(dynamic d) {
+        if (d is List) return d;
+        if (d is Map && d.containsKey('content')) return d['content'] as List;
+        return [];
+      }
+
       // Lấy danh sách sửa chữa
       final ordersRes = await ApiService.get('/repair/orders/customer/$customerId');
       int activeRepairsCount = 0;
       if (ordersRes.statusCode == 200) {
-        final List orders = jsonDecode(ordersRes.body);
-        activeRepairsCount = orders.where((o) => o['status'] != 'COMPLETED').length;
+        final decoded = jsonDecode(utf8.decode(ordersRes.bodyBytes));
+        final List orders = _extract(decoded);
+        activeRepairsCount = orders.where((o) => o['status'] != 'COMPLETED' && o['status'] != 'CANCELLED').length;
       }
 
       // Lấy danh sách lịch hẹn
       final apptsRes = await ApiService.get('/repair/appointments/customer/$customerId');
       int upcomingApptsCount = 0;
       if (apptsRes.statusCode == 200) {
-        final List appts = jsonDecode(apptsRes.body);
+        final decoded = jsonDecode(utf8.decode(apptsRes.bodyBytes));
+        final List appts = _extract(decoded);
         upcomingApptsCount = appts.where((a) => a['status'] == 'PENDING' || a['status'] == 'CONFIRMED').length;
       }
 
@@ -102,7 +110,8 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       final invoicesRes = await ApiService.get('/billing/invoices/customer/$customerId');
       int unpaidInvoicesCount = 0;
       if (invoicesRes.statusCode == 200) {
-        final List invoices = jsonDecode(invoicesRes.body);
+        final decoded = jsonDecode(utf8.decode(invoicesRes.bodyBytes));
+        final List invoices = _extract(decoded);
         unpaidInvoicesCount = invoices.where((i) => i['status'] != 'PAID').length;
       }
 

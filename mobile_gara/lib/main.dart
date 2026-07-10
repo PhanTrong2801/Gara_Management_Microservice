@@ -8,6 +8,7 @@ import 'screens/login_screen.dart';
 import 'screens/manager/manager_dashboard.dart';
 import 'screens/mechanic/mechanic_dashboard.dart';
 import 'screens/customer/customer_dashboard.dart';
+import 'screens/receptionist/receptionist_dashboard.dart';
 import 'services/notification_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -101,6 +102,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
         return const ManagerDashboard();
       } else if (user.role == 'MECHANIC' || user.role == 'ROLE_MECHANIC') {
         return const MechanicDashboard();
+      } else if (user.role == 'RECEPTIONIST' || user.role == 'ROLE_RECEPTIONIST') {
+        return const ReceptionistDashboard();
       } else if (user.role == 'CUSTOMER' || user.role == 'ROLE_CUSTOMER') {
         return const CustomerDashboard();
       }

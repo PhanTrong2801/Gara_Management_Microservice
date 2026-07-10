@@ -5,17 +5,19 @@ import api from '../../api/axiosConfig';
 import RepairOrderDetailsModal from './RepairOrderDetailsModal';
 import { useTablePagination } from '../../hooks/useTablePagination';
 import Pagination from '../../components/common/Pagination';
+import { useDebounce } from '../../hooks/useDebounce';
 import { useMemo } from 'react';
 
 const STATUS_CONFIG = {
   PENDING:    { label: 'Chờ xử lý',    color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
   DIAGNOSING: { label: 'Chẩn đoán',    color: 'bg-blue-100 text-blue-800',     dot: 'bg-blue-500' },
   QUOTING:    { label: 'Báo giá',      color: 'bg-purple-100 text-purple-800', dot: 'bg-purple-500' },
+  APPROVED:   { label: 'Đã duyệt giá', color: 'bg-cyan-100 text-cyan-800',    dot: 'bg-cyan-500' },
   REPAIRING:  { label: 'Đang sửa',     color: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500' },
   COMPLETED:  { label: 'Hoàn thành',   color: 'bg-emerald-100 text-emerald-800', dot: 'bg-emerald-500' },
 };
 
-const STATUS_FLOW = ['PENDING', 'DIAGNOSING', 'QUOTING', 'REPAIRING', 'COMPLETED'];
+const STATUS_FLOW = ['PENDING', 'DIAGNOSING', 'QUOTING', 'APPROVED', 'REPAIRING', 'COMPLETED'];
 
 export default function RepairManagement() {
   const navigate = useNavigate();
@@ -23,21 +25,29 @@ export default function RepairManagement() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [updatingId, setUpdatingId] = useState(null);
+
+  // Server-side pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const debouncedSearch = useDebounce(searchTerm, 500);
   
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [currentPage, debouncedSearch]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/repair/orders');
-      const dataArray = response.data.content || response.data || [];
-      const sortedData = dataArray.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setOrders(sortedData);
+      const response = await api.get(`/repair/orders?page=${currentPage - 1}&size=10&search=${debouncedSearch}&sort=createdAt,desc`);
+      setOrders(response.data.content || []);
+      const pageMeta = response.data.page || response.data;
+      setTotalPages(pageMeta.totalPages || 1);
+      setTotalItems(pageMeta.totalElements || 0);
     } catch (error) {
       console.error("Lỗi khi tải danh sách:", error);
     } finally {
@@ -83,19 +93,6 @@ export default function RepairManagement() {
     return orders.filter(o => o.status === filterStatus);
   }, [orders, filterStatus]);
 
-  const {
-      currentData: currentOrders,
-      currentPage,
-      totalPages,
-      searchTerm,
-      setSearchTerm,
-      handlePageChange,
-      totalItems
-  } = useTablePagination(statusFilteredOrders, (order, term) => {
-      return order.orderNumber?.toLowerCase().includes(term) ||
-             order.createdBy?.toLowerCase().includes(term);
-  });
-
   // Count by status
   const statusCounts = STATUS_FLOW.reduce((acc, status) => {
     acc[status] = orders.filter(o => o.status === status).length;
@@ -138,7 +135,10 @@ export default function RepairManagement() {
             type="text"
             placeholder="Tìm mã phiếu, người tạo..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+            }}
             className="w-full pl-10 pr-4 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-200 focus:outline-none text-sm"
           />
         </div>
@@ -170,7 +170,7 @@ export default function RepairManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {currentOrders.length === 0 ? (
+              {statusFilteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                     <AlertTriangle className="w-8 h-8 mx-auto text-gray-300 mb-3" />
@@ -178,7 +178,7 @@ export default function RepairManagement() {
                   </td>
                 </tr>
               ) : (
-                currentOrders.map(order => {
+                statusFilteredOrders.map(order => {
                   const config = STATUS_CONFIG[order.status] || { label: order.status, color: 'bg-gray-100 text-gray-800', dot: 'bg-gray-500' };
                   const nextStatus = getNextStatus(order.status);
                   const nextConfig = nextStatus ? STATUS_CONFIG[nextStatus] : null;
@@ -273,7 +273,7 @@ export default function RepairManagement() {
             currentPage={currentPage} 
             totalPages={totalPages} 
             totalItems={totalItems} 
-            onPageChange={handlePageChange} 
+            onPageChange={setCurrentPage} 
         />
       </div>
 

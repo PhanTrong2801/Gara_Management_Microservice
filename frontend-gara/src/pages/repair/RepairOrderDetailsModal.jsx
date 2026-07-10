@@ -29,8 +29,11 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
         api.get('/inventory/parts'),
         api.get('/repair/service-catalog')
       ]);
-      setAvailableParts(partsRes.data);
-      setAvailableServices(servicesRes.data);
+      const partsData = partsRes.data.content || partsRes.data;
+      const servicesData = servicesRes.data.content || servicesRes.data;
+      
+      setAvailableParts(Array.isArray(partsData) ? partsData : []);
+      setAvailableServices(Array.isArray(servicesData) ? servicesData : []);
     } catch (error) {
       console.error('Lỗi tải danh mục:', error);
     } finally {

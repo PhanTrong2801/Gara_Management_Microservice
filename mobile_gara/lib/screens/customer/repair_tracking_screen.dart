@@ -35,7 +35,14 @@ class _RepairTrackingScreenState extends State<RepairTrackingScreen> {
       print('[DEBUG] repair/orders/customer response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        List data = [];
+        if (decoded is List) {
+          data = decoded;
+        } else if (decoded is Map && decoded.containsKey('content')) {
+          data = decoded['content'] as List;
+        }
+
         setState(() {
           _orders = data.map((o) => RepairOrderModel.fromJson(o)).toList();
           // Sắp xếp mới nhất lên đầu
@@ -595,15 +602,20 @@ class _RepairTrackingScreenState extends State<RepairTrackingScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'PENDING':
+      case 'RECEIVED':
         return Colors.orange;
       case 'DIAGNOSING':
         return Colors.blue;
       case 'QUOTING':
         return Colors.purple;
-      case 'REPAIRING':
+      case 'APPROVED':
         return Colors.teal;
+      case 'REPAIRING':
+        return Colors.indigo;
       case 'COMPLETED':
         return Colors.green;
+      case 'CANCELLED':
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -612,15 +624,20 @@ class _RepairTrackingScreenState extends State<RepairTrackingScreen> {
   String _translateStatus(String status) {
     switch (status) {
       case 'PENDING':
+      case 'RECEIVED':
         return 'Chờ nhận xe';
       case 'DIAGNOSING':
         return 'Đang chẩn đoán';
       case 'QUOTING':
         return 'Đang báo giá';
+      case 'APPROVED':
+        return 'Đã duyệt giá';
       case 'REPAIRING':
         return 'Đang sửa chữa';
       case 'COMPLETED':
         return 'Đã hoàn thành';
+      case 'CANCELLED':
+        return 'Đã hủy';
       default:
         return status;
     }

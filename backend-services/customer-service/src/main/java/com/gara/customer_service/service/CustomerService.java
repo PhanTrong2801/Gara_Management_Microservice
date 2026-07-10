@@ -26,9 +26,9 @@ public class CustomerService {
 
     // 1. Đăng ký khách hàng mới
     @Transactional
-    @CacheEvict(value = {"customer_by_id", "customer_by_userid"}, allEntries = true)
-    public Customer createCustomer(CustomerDTO dto){
-        if (customerRepository.findByPhoneNumber(dto.getPhoneNumber()).isPresent()){
+    @CacheEvict(value = { "customer_by_id", "customer_by_userid" }, allEntries = true)
+    public Customer createCustomer(CustomerDTO dto) {
+        if (customerRepository.findByPhoneNumber(dto.getPhoneNumber()).isPresent()) {
             throw new RuntimeException("Số điện thoại này đã tồn tại trong hệ thống!");
         }
         Customer customer = new Customer();
@@ -42,21 +42,21 @@ public class CustomerService {
     }
 
     @Transactional
-    @CacheEvict(value = {"customer_by_id", "customer_by_userid"}, allEntries = true)
+    @CacheEvict(value = { "customer_by_id", "customer_by_userid" }, allEntries = true)
     public Customer createInternalCustomer(InternalCustomerDTO dto) {
-        if (dto.getPhoneNumber() != null && customerRepository.findByPhoneNumber(dto.getPhoneNumber()).isPresent()){
+        if (dto.getPhoneNumber() != null && customerRepository.findByPhoneNumber(dto.getPhoneNumber()).isPresent()) {
             throw new RuntimeException("Số điện thoại này đã tồn tại trong hệ thống!");
         }
-        if (dto.getUserId() != null && customerRepository.findByUserId(dto.getUserId()).isPresent()){
+        if (dto.getUserId() != null && customerRepository.findByUserId(dto.getUserId()).isPresent()) {
             throw new RuntimeException("UserId này đã được đăng ký!");
         }
-        
+
         Customer customer = new Customer();
         customer.setFullName(dto.getFullName());
         customer.setPhoneNumber(dto.getPhoneNumber() != null ? dto.getPhoneNumber() : "N/A");
         customer.setEmail(dto.getEmail());
         customer.setUserId(dto.getUserId());
-        
+
         return customerRepository.save(customer);
     }
 
@@ -64,7 +64,8 @@ public class CustomerService {
     @Transactional
     public Vehicle addVehicle(VehicleDTO dto) {
         Customer customer = customerRepository.findById(dto.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng sở hữu có ID: " + dto.getCustomerId()));
+                .orElseThrow(
+                        () -> new RuntimeException("Không tìm thấy khách hàng sở hữu có ID: " + dto.getCustomerId()));
 
         if (vehicleRepository.findByLicensePlate(dto.getLicensePlate()).isPresent()) {
             throw new RuntimeException("Biển số xe này đã được đăng ký trước đó!");
@@ -81,19 +82,19 @@ public class CustomerService {
         return vehicleRepository.save(vehicle);
     }
 
-
     // 3. Lấy thông tin chi tiết khách hàng (Bao gồm danh sách xe của họ)
     @Cacheable(value = "customer_by_id", key = "#id")
-    public Customer getCustomerById(Long id){
+    public Customer getCustomerById(Long id) {
         return customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng sở hữu có ID: "+id));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng sở hữu có ID: " + id));
     }
 
     @Cacheable(value = "customer_by_userid", key = "#userId")
-    public Customer getCustomerByUserId(Long userId){
+    public Customer getCustomerByUserId(Long userId) {
         return customerRepository.findByUserId(userId)
                 .orElseGet(() -> {
-                    // Tự động tạo profile rỗng nếu user tồn tại bên Auth mà bên Customer bị mất data (Data Sync Issue)
+                    // Tự động tạo profile rỗng nếu user tồn tại bên Auth mà bên Customer bị mất
+                    // data (Data Sync Issue)
                     Customer newCust = new Customer();
                     newCust.setUserId(userId);
                     newCust.setFullName("Người dùng mới");
@@ -112,7 +113,7 @@ public class CustomerService {
     }
 
     @Transactional
-    @CacheEvict(value = {"customer_by_id", "customer_by_userid"}, allEntries = true)
+    @CacheEvict(value = { "customer_by_id", "customer_by_userid" }, allEntries = true)
     public Customer updateCustomer(Long id, CustomerDTO dto) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));

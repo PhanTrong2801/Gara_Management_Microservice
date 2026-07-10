@@ -48,7 +48,14 @@ class _BookingAppointmentScreenState extends State<BookingAppointmentScreen> wit
       print('[DEBUG] appointments response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        List data = [];
+        if (decoded is List) {
+          data = decoded;
+        } else if (decoded is Map && decoded.containsKey('content')) {
+          data = decoded['content'] as List;
+        }
+
         setState(() {
           _appointments = data.map((a) => AppointmentModel.fromJson(a)).toList();
           // Sắp xếp mới nhất lên đầu

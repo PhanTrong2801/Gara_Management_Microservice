@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.io.Serializable;
 
 @Entity
 @Table(name = "customers", indexes = {
@@ -18,7 +19,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Customer {
+public class Customer implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,7 +41,7 @@ public class Customer {
 
     // Quan hệ 1-N: 1 Khách hàng có nhiều Xe
     // CascadeType.ALL: Khi xóa khách hàng thì xóa luôn xe của họ
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonIgnoreProperties("customer")
     private List<Vehicle> vehicles;
 

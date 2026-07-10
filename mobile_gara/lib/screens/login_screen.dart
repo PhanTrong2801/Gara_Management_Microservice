@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import 'manager/manager_dashboard.dart';
 import 'mechanic/mechanic_dashboard.dart';
 import 'customer/customer_dashboard.dart';
+import 'receptionist/receptionist_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,6 +39,11 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const MechanicDashboard()),
+          );
+        } else if (user.role == 'RECEPTIONIST' || user.role == 'ROLE_RECEPTIONIST') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const ReceptionistDashboard()),
           );
         } else if (user.role == 'CUSTOMER' || user.role == 'ROLE_CUSTOMER') {
           Navigator.pushReplacement(

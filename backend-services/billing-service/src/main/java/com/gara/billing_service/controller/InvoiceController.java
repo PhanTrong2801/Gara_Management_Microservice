@@ -8,6 +8,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/billing")
@@ -23,13 +27,17 @@ public class InvoiceController {
     }
 
     @GetMapping("/invoices")
-    public ResponseEntity<List<Invoice>> getAllInvoices() {
-        return ResponseEntity.ok(invoiceService.getAllInvoices());
+    public ResponseEntity<Page<Invoice>> getAllInvoices(
+            @RequestParam(required = false, defaultValue = "") String search,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(invoiceService.getAllInvoices(search, pageable));
     }
 
     @GetMapping("/invoices/customer/{customerId}")
-    public ResponseEntity<List<Invoice>> getInvoicesByCustomerId(@PathVariable Long customerId) {
-        return ResponseEntity.ok(invoiceService.getInvoicesByCustomerId(customerId));
+    public ResponseEntity<Page<Invoice>> getInvoicesByCustomerId(
+            @PathVariable Long customerId,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(invoiceService.getInvoicesByCustomerId(customerId, pageable));
     }
 
     @GetMapping("/invoices/{invoiceNumber}")

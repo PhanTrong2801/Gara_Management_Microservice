@@ -50,7 +50,8 @@ export default function AdminDashboard() {
         api.get('/inventory/parts')
       ]);
 
-      setUsers(usersRes.data);
+      const usersData = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.content || []);
+      setUsers(usersData);
 
       // Tính tổng doanh thu từ hóa đơn đã thanh toán
       const invoices = invoicesRes.data.content || invoicesRes.data || [];
@@ -81,8 +82,8 @@ export default function AdminDashboard() {
 
   const fetchUsers = async () => {
     try {
-      const response = await api.get('/auth/users');
-      setUsers(response.data);
+      const usersData = Array.isArray(response.data) ? response.data : (response.data?.content || []);
+      setUsers(usersData);
     } catch (err) {
       console.error(err);
     }
