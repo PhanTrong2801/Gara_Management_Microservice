@@ -10,6 +10,8 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
   const [availableServices, setAvailableServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [activeMechanics, setActiveMechanics] = useState([]);
+  const [selectedMechanicId, setSelectedMechanicId] = useState('');
 
   const role = localStorage.getItem('role') || '';
   const isMechanic = ['ROLE_MECHANIC', 'MECHANIC'].includes(role.toUpperCase());
@@ -18,9 +20,22 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
     if (isOpen && order) {
       setTasks(order.tasks || []);
       setParts(order.parts || []);
+      setSelectedMechanicId(order.mechanicId || '');
       fetchCatalog();
+      if (!isMechanic) {
+        fetchActiveMechanics();
+      }
     }
   }, [isOpen, order]);
+
+  const fetchActiveMechanics = async () => {
+    try {
+      const res = await api.get('/auth/attendance/active-mechanics');
+      setActiveMechanics(res.data || []);
+    } catch (error) {
+      console.error('Lỗi lấy danh sách thợ:', error);
+    }
+  };
 
   const fetchCatalog = async () => {
     try {
@@ -94,6 +109,15 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
         tasks: tasks,
         parts: parts
       });
+      
+      // Nếu có chọn thợ thì gọi thêm API gán thợ
+      if (selectedMechanicId && selectedMechanicId !== order.mechanicId) {
+        await api.put(`/repair/orders/${order.id}/status`, {
+          status: order.status,
+          mechanicId: selectedMechanicId
+        });
+      }
+
       alert('Đã cập nhật chi tiết phiếu sửa chữa!');
       onSaveSuccess();
     } catch (error) {
@@ -123,6 +147,32 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           
+          {/* Điều phối thợ */}
+          {!isMechanic && (
+            <section className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-yellow-800 mb-3">
+                👩‍🔧 Điều phối thợ sửa chữa
+              </h3>
+              <div className="flex gap-4 items-center">
+                <select 
+                  className="flex-1 px-3 py-2 border border-yellow-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white"
+                  value={selectedMechanicId}
+                  onChange={(e) => setSelectedMechanicId(e.target.value)}
+                >
+                  <option value="">-- Chọn thợ đang có mặt --</option>
+                  {activeMechanics.map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.fullName} ({m.username}) - {m.phone || 'N/A'}
+                    </option>
+                  ))}
+                </select>
+                <div className="text-sm text-yellow-700 italic">
+                  Chỉ những thợ đã điểm danh hôm nay mới hiển thị ở đây.
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Tiền công */}
           <section>
             <div className="flex items-center justify-between mb-4">

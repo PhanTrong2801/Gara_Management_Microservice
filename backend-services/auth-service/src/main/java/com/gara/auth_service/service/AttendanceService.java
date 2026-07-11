@@ -13,6 +13,11 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import com.gara.auth_service.entity.User;
 
 @Service
 @RequiredArgsConstructor
@@ -154,5 +159,20 @@ public class AttendanceService {
         } catch (Exception e) {
             throw new RuntimeException("Lỗi thuật toán mã hóa", e);
         }
+    }
+
+    public List<Map<String, Object>> getActiveMechanics() {
+        LocalDate today = LocalDate.now();
+        List<String> activeStatuses = Arrays.asList("IN_PROGRESS", "LATE");
+        List<User> activeMechanics = scheduleRepository.findActiveUsersByRole(today, "MECHANIC", activeStatuses);
+        
+        return activeMechanics.stream().map(user -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", user.getId());
+            map.put("username", user.getUsername());
+            map.put("fullName", user.getFullName());
+            map.put("phone", user.getPhone());
+            return map;
+        }).collect(Collectors.toList());
     }
 }

@@ -16,6 +16,7 @@ public interface RepairOrderRepository extends MongoRepository<RepairOrder, Stri
     List<RepairOrder> findByCustomerId(Long customerId);
     List<RepairOrder> findByStatusAndInventoryDeducted(String status, boolean inventoryDeducted);
     List<RepairOrder> findByStatusAndCustomerNotified(String status, boolean customerNotified);
+    List<RepairOrder> findByMechanicIdAndStatusNot(Long mechanicId, String status);
 
     @Query("{ '$or': [ " +
            "  { 'orderNumber': { '$regex': ?0, '$options': 'i' } }, " +

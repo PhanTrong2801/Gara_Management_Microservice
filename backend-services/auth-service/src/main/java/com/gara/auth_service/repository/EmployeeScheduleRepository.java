@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import com.gara.auth_service.entity.User;
 
 @Repository
 public interface EmployeeScheduleRepository extends JpaRepository<EmployeeSchedule, Long> {
@@ -23,4 +24,10 @@ public interface EmployeeScheduleRepository extends JpaRepository<EmployeeSchedu
             @Param("shiftId") Long shiftId, 
             @Param("workDate") LocalDate workDate, 
             @Param("roleName") String roleName);
+
+    @Query("SELECT DISTINCT es.user FROM EmployeeSchedule es WHERE es.workDate = :workDate AND es.user.role.name = :roleName AND es.status IN :statuses")
+    List<User> findActiveUsersByRole(
+            @Param("workDate") LocalDate workDate, 
+            @Param("roleName") String roleName, 
+            @Param("statuses") List<String> statuses);
 }

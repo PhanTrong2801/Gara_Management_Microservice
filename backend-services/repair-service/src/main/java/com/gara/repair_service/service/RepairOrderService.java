@@ -68,6 +68,11 @@ public class RepairOrderService {
         return repairOrderRepository.findByCustomerId(customerId);
     }
 
+    public List<RepairOrder> getOrdersByMechanicId(Long mechanicId) {
+        // Trả về các phiếu được gán cho thợ này và chưa hoàn thành
+        return repairOrderRepository.findByMechanicIdAndStatusNot(mechanicId, "COMPLETED");
+    }
+
     public RepairOrder updateOrderStatus(String id, String status, Long mechanicId) {
         RepairOrder order = repairOrderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu sửa chữa"));

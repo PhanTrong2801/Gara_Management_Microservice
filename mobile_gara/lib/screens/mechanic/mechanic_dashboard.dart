@@ -139,9 +139,8 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
     });
 
     try {
-      final response = await ApiService.get('/repair/orders?size=500&sort=createdAt,desc');
-      print('[DEBUG] repair/orders status: ${response.statusCode}');
-      print('[DEBUG] repair/orders body: ${response.body.substring(0, response.body.length > 300 ? 300 : response.body.length)}');
+      final response = await ApiService.get('/repair/orders/mechanic/${user.id}');
+      print('[DEBUG] repair/orders/mechanic status: ${response.statusCode}');
       
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -156,20 +155,9 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
 
         final allOrders = data.map((o) => RepairOrderModel.fromJson(o)).toList();
 
-        print('[DEBUG] Tổng số phiếu: ${allOrders.length}');
-        print('[DEBUG] User ID hiện tại: ${user.id}');
-
         setState(() {
-          // Hiển thị tất cả phiếu đang sửa chữa (giống web MechanicDashboard)
-          // Nếu mechanicId được gán thì lọc theo thợ, nếu không thì hiển thị phiếu đang REPAIRING
-          _myOrders = allOrders.where((o) {
-            // Ưu tiên lọc theo mechanicId nếu được gán
-            if (o.mechanicId != null && o.mechanicId == user.id) return true;
-            // Nếu chưa gán mechanicId thì hiển thị tất cả phiếu đang REPAIRING
-            if (o.mechanicId == null && o.status == 'REPAIRING') return true;
-            return false;
-          }).toList();
-
+          // Chỉ lấy những phiếu được gán cho thợ này (API đã lọc sẵn)
+          _myOrders = allOrders;
           print('[DEBUG] Số phiếu sau lọc: ${_myOrders.length}');
         });
       } else {

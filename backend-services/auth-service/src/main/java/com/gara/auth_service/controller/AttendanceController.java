@@ -57,4 +57,12 @@ public class AttendanceController {
             return ResponseEntity.badRequest().body(error);
         }
     }
+
+    /**
+     * Web Manager gọi API này để lấy danh sách Thợ đang có mặt để giao việc
+     */
+    @GetMapping("/active-mechanics")
+    public ResponseEntity<java.util.List<Map<String, Object>>> getActiveMechanics() {
+        return ResponseEntity.ok(attendanceService.getActiveMechanics());
+    }
 }

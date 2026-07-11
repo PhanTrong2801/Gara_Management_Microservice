@@ -40,6 +40,26 @@ export default function RepairManagement() {
     fetchOrders();
   }, [currentPage, debouncedSearch]);
 
+  // Tự động Polling (Hỏi thăm Backend) mỗi 3s nếu có phiếu đang chờ kho
+  useEffect(() => {
+    const hasWaitingInventory = orders.some(o => o.status === 'WAITING_INVENTORY');
+    if (!hasWaitingInventory) return;
+
+    const intervalId = setInterval(() => {
+      // Fetch ngầm không bật loading để tránh giật UI
+      api.get(`/repair/orders?page=${currentPage - 1}&size=10&search=${debouncedSearch}&sort=createdAt,desc`)
+        .then(response => {
+          setOrders(response.data.content || []);
+          const pageMeta = response.data.page || response.data;
+          setTotalPages(pageMeta.totalPages || 1);
+          setTotalItems(pageMeta.totalElements || 0);
+        })
+        .catch(err => console.error("Lỗi khi polling danh sách:", err));
+    }, 3000); // 3 giây kiểm tra 1 lần
+
+    return () => clearInterval(intervalId); // Cleanup khi component unmount hoặc effect chạy lại
+  }, [orders, currentPage, debouncedSearch]);
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
