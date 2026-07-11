@@ -60,7 +60,7 @@ export default function InventoryManagement() {
     const fetchSuppliers = async () => {
         try {
             const res = await api.get('/inventory/suppliers');
-            setSuppliers(res.data);
+            setSuppliers(res.data.content || res.data || []);
         } catch (error) {
             console.error("Lỗi khi tải nhà cung cấp:", error);
         }

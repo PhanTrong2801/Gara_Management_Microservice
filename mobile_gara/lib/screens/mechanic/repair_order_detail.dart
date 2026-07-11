@@ -29,6 +29,9 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
   // Local state for editing details
   List<RepairTaskModel> _localTasks = [];
   List<RepairPartModel> _localParts = [];
+  
+  List<Map<String, dynamic>> _activeMechanics = [];
+  int? _selectedMechanicId;
 
   @override
   void initState() {
@@ -36,7 +39,25 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
     _currentOrder = widget.order;
     _localTasks = List.from(_currentOrder.tasks);
     _localParts = List.from(_currentOrder.parts);
+    _selectedMechanicId = _currentOrder.mechanicId;
     _initializeControllers();
+    _fetchActiveMechanics();
+  }
+
+  Future<void> _fetchActiveMechanics() async {
+    try {
+      final response = await ApiService.get('/auth/attendance/active-mechanics');
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (mounted) {
+          setState(() {
+            _activeMechanics = data.cast<Map<String, dynamic>>();
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Lỗi tải danh sách thợ: $e");
+    }
   }
 
   void _initializeControllers() {
@@ -90,6 +111,7 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
           _currentOrder = RepairOrderModel.fromJson(jsonDecode(response.body));
           _localTasks = List.from(_currentOrder.tasks);
           _localParts = List.from(_currentOrder.parts);
+          _selectedMechanicId = _currentOrder.mechanicId;
           _initializeControllers();
         });
       }
@@ -329,6 +351,13 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
   }
 
   Future<void> _updateOrderStatus(String status) async {
+    if (status == 'REPAIRING' && _selectedMechanicId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn Thợ sửa chữa trước khi chuyển sang Đang sửa!'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -338,7 +367,7 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
         '/repair/orders/${_currentOrder.id}/status',
         {
           'status': status,
-          'mechanicId': _currentOrder.mechanicId,
+          'mechanicId': _selectedMechanicId ?? _currentOrder.mechanicId,
         },
       );
 
@@ -390,6 +419,17 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
 
       final response = await ApiService.put('/repair/orders/${_currentOrder.id}/details', payload);
       if (response.statusCode == 200) {
+        // Cập nhật thợ nếu có thay đổi
+        if (_selectedMechanicId != null && _selectedMechanicId != _currentOrder.mechanicId) {
+          await ApiService.put(
+            '/repair/orders/${_currentOrder.id}/status',
+            {
+              'status': _currentOrder.status,
+              'mechanicId': _selectedMechanicId,
+            },
+          );
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Cập nhật chi tiết phiếu sửa chữa thành công!'), backgroundColor: Colors.green),
@@ -666,6 +706,41 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
                             ),
                         ],
                       ),
+                      if (isManager) ...[
+                        const Divider(height: 32),
+                        const Text(
+                          '👩‍🔧 Điều phối thợ sửa chữa',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<int>(
+                          value: _selectedMechanicId,
+                          hint: const Text('-- Chọn thợ đang trực --'),
+                          isExpanded: true,
+                          items: _activeMechanics.map((m) {
+                            return DropdownMenuItem<int>(
+                              value: m['id'] as int,
+                              child: Text('${m['fullName']} (${m['username']})'),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedMechanicId = val;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            filled: true,
+                            fillColor: Colors.orange.shade50,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Chọn thợ trước khi bấm Lưu hoặc chuyển trạng thái sang Đang sửa.',
+                          style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       if (isManager && _currentOrder.status == 'QUOTING' && !_currentOrder.customerApproved)
                         SizedBox(

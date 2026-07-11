@@ -153,15 +153,74 @@ class _ReceptionistDashboardState extends State<ReceptionistDashboard> {
           )
         ],
       ),
-      body: _isLoading 
-          ? const Center(child: CircularProgressIndicator()) 
-          : RefreshIndicator(
-              onRefresh: () async {
-                await _fetchMySchedules();
-                await _fetchMonthlyStats();
-              },
-              child: pages[_currentIndex],
-            ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await _fetchMySchedules();
+          await _fetchMonthlyStats();
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Welcome Header
+              Card(
+                elevation: 0,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.teal.withValues(alpha: 0.1),
+                        child: Icon(
+                          _currentIndex == 0 ? Icons.event_available : Icons.bar_chart, 
+                          color: Colors.teal, 
+                          size: 28
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user.fullName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _currentIndex == 0 ? 'Lịch trực lễ tân tuần này' : 'Báo cáo chấm công cá nhân',
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Dynamic Tab Content
+              Expanded(
+                child: _isLoading 
+                    ? const Center(child: CircularProgressIndicator()) 
+                    : pages[_currentIndex],
+              ),
+            ],
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -209,45 +268,8 @@ class _ReceptionistDashboardState extends State<ReceptionistDashboard> {
     final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.zero,
       children: [
-        // Header
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
-            ],
-          ),
-          child: Row(
-            children: [
-              const CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.teal,
-                child: Icon(Icons.person, size: 30, color: Colors.white),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Xin chào, Lễ tân',
-                      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                    ),
-                    Text(
-                      Provider.of<AuthProvider>(context, listen: false).currentUser?.fullName ?? 'Nhân viên',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
         const Text(
           'Lịch trực tuần này',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
@@ -383,7 +405,7 @@ class _ReceptionistDashboardState extends State<ReceptionistDashboard> {
     int totalAutoCheckout = _monthlySchedules.where((s) => s.autoCheckout).length;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.zero,
       children: [
         const Text(
           'Thống kê chấm công (Tháng này)',
@@ -451,20 +473,28 @@ class _ReceptionistDashboardState extends State<ReceptionistDashboard> {
 
   Color _getStatusColor(String status) {
     switch (status) {
+      case 'PENDING_APPROVAL': return Colors.orange;
+      case 'ASSIGNED_BY_MANAGER': return Colors.indigo;
+      case 'APPROVED': 
       case 'SCHEDULED': return Colors.grey;
       case 'IN_PROGRESS': return Colors.blue;
-      case 'LATE': return Colors.orange;
+      case 'LATE': return Colors.red;
       case 'COMPLETED': return Colors.green;
+      case 'REJECTED': return Colors.redAccent;
       default: return Colors.grey;
     }
   }
 
   String _translateStatus(String status) {
     switch (status) {
+      case 'PENDING_APPROVAL': return 'CHỜ DUYỆT';
+      case 'ASSIGNED_BY_MANAGER': return 'ĐƯỢC GIAO';
+      case 'APPROVED': 
       case 'SCHEDULED': return 'SẮP TỚI';
       case 'IN_PROGRESS': return 'ĐANG LÀM';
       case 'LATE': return 'TRỄ';
       case 'COMPLETED': return 'ĐÃ RA CA';
+      case 'REJECTED': return 'TỪ CHỐI';
       default: return status;
     }
   }

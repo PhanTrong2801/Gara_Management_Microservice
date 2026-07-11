@@ -456,6 +456,16 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
                                                 ),
                                                 child: Text('Từ chối', style: TextStyle(fontSize: 9, color: Colors.red.shade800)),
                                               ),
+                                            if (sch.status == 'ASSIGNED_BY_MANAGER')
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.indigo.shade50,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: Colors.indigo.shade200),
+                                                ),
+                                                child: Text('Được giao', style: TextStyle(fontSize: 9, color: Colors.indigo.shade800)),
+                                              ),
                                             if (sch.status == 'SCHEDULED')
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),

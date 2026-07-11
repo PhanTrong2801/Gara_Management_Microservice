@@ -47,14 +47,18 @@ class _CreateRepairOrderScreenState extends State<CreateRepairOrderScreen> {
     try {
       final res = await ApiService.get('/customers');
       if (res.statusCode == 200) {
-        final List data = jsonDecode(res.body);
+        final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+        List data = [];
+        if (decoded is List) data = decoded;
+        else if (decoded is Map && decoded.containsKey('content')) data = decoded['content'] as List;
+        
         final list = data.map((c) => CustomerModel.fromJson(c)).toList();
         setState(() {
           _customers = list;
           _filteredCustomers = list;
 
           // Tự động tìm và chọn khách hàng nếu có truyền SĐT từ Lịch hẹn
-          if (widget.prefillPhone != null && widget.prefillPhone!.isNotEmpty) {
+          if (widget.prefillPhone != null && widget.prefillPhone!.isNotEmpty && _customers.isNotEmpty) {
             final match = _customers.firstWhere(
               (c) => c.phoneNumber == widget.prefillPhone,
               orElse: () => _customers.first, // fallback if not found
