@@ -6,12 +6,13 @@ import Pagination from '../../components/common/Pagination';
 import { useDebounce } from '../../hooks/useDebounce';
 
 const STATUS_CONFIG = {
-    'PENDING': { label: 'Chờ xử lý', color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
-    'CHECKED_IN': { label: 'Đã tiếp nhận', color: 'bg-blue-100 text-blue-800', dot: 'bg-blue-500' },
-    'IN_PROGRESS': { label: 'Đang sửa chữa', color: 'bg-indigo-100 text-indigo-800', dot: 'bg-indigo-500' },
-    'WAITING_APPROVAL': { label: 'Chờ duyệt giá', color: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500' },
+    'PENDING': { label: 'Chờ nhận xe', color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
+    'RECEIVED': { label: 'Chờ nhận xe', color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
+    'DIAGNOSING': { label: 'Đang chẩn đoán', color: 'bg-blue-100 text-blue-800', dot: 'bg-blue-500' },
+    'QUOTING': { label: 'Đang báo giá', color: 'bg-purple-100 text-purple-800', dot: 'bg-purple-500' },
+    'APPROVED': { label: 'Đã duyệt giá', color: 'bg-teal-100 text-teal-800', dot: 'bg-teal-500' },
+    'REPAIRING': { label: 'Đang sửa chữa', color: 'bg-indigo-100 text-indigo-800', dot: 'bg-indigo-500' },
     'COMPLETED': { label: 'Hoàn thành', color: 'bg-green-100 text-green-800', dot: 'bg-green-500' },
-    'DELIVERED': { label: 'Đã giao xe', color: 'bg-purple-100 text-purple-800', dot: 'bg-purple-500' },
     'CANCELLED': { label: 'Đã hủy', color: 'bg-red-100 text-red-800', dot: 'bg-red-500' },
 };
 

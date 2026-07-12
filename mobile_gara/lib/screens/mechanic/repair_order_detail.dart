@@ -159,6 +159,17 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
   }
 
   void _showSignatureDialog() {
+    if (_isModified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Vui lòng cuộn xuống bấm "Lưu lại thay đổi" ở phần công việc/phụ tùng trước khi cho khách ký!'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     final SignatureController signatureController = SignatureController(
       penStrokeWidth: 3,
       penColor: Colors.black,
@@ -351,6 +362,17 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
   }
 
   Future<void> _updateOrderStatus(String status) async {
+    if (_isModified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Vui lòng cuộn xuống bấm "Lưu lại thay đổi" trước khi chuyển trạng thái!'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     if (status == 'REPAIRING' && _selectedMechanicId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn Thợ sửa chữa trước khi chuyển sang Đang sửa!'), backgroundColor: Colors.red),
@@ -467,7 +489,11 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
             if (loadingSvc) {
               ApiService.get('/repair/service-catalog').then((res) {
                 if (res.statusCode == 200) {
-                  final List data = jsonDecode(res.body);
+                  final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+                  List data = [];
+                  if (decoded is List) data = decoded;
+                  else if (decoded is Map && decoded.containsKey('content')) data = decoded['content'] as List;
+
                   setDialogState(() {
                     availableServices = data.map((s) => CatalogServiceModel.fromJson(s)).toList();
                     loadingSvc = false;
@@ -544,7 +570,11 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
             if (loadingParts) {
               ApiService.get('/inventory/parts').then((res) {
                 if (res.statusCode == 200) {
-                  final List data = jsonDecode(res.body);
+                  final decoded = jsonDecode(utf8.decode(res.bodyBytes));
+                  List data = [];
+                  if (decoded is List) data = decoded;
+                  else if (decoded is Map && decoded.containsKey('content')) data = decoded['content'] as List;
+
                   setDialogState(() {
                     availableParts = data.map((p) => CatalogPartModel.fromJson(p)).toList();
                     loadingParts = false;
