@@ -1,0 +1,364 @@
+
+services:
+  # MySQL cho Auth & Customer Service
+  mysql:
+    image: mysql:8.0
+    container_name: gara-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: gara_core_db
+      MYSQL_USER: gara_user
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - gara-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB cho Repair & Inventory Service
+  mongo-db:
+    image: mongo:8.0
+    container_name: gara-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoadmin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - gara-network
+    healthcheck: # <--- Bắt buộc phải có khối này và thẳng hàng với networks
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: gara-postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: customer_vehicle_db
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - gara-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U root -d customer_vehicle_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: gara-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - gara-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: gara-redis
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    ports:
+      - "6379:6379"
+    networks:
+      - gara-network
+
+
+
+  eureka-service:
+    image: trongphan2801/gara-eureka-service:latest
+    container_name: eureka-service
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    ports:
+      - "8761:8761"
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
+    networks:
+      - gara-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8761/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    image: trongphan2801/gara-auth-service:latest
+    container_name: auth-service
+    # ports:
+    #   - "8081:8081"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - TZ=Asia/Ho_Chi_Minh
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
+    networks:
+      - gara-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  api-gateway:
+    image: trongphan2801/gara-api-gateway:latest
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - SPRING_DATA_REDIS_HOST=gara-redis
+      - TZ=Asia/Ho_Chi_Minh
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+
+  repair-service:
+    image: trongphan2801/gara-repair-service:latest
+    container_name: repair-service
+    # ports:
+    #   - "8082:8082"
+    environment: # <--- Bổ sung khối này
+      - SPRING_MONGODB_URI=${MONGO_REPAIR_DB_URI}
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - SPRING_DATA_REDIS_HOST=gara-redis
+      - TZ=Asia/Ho_Chi_Minh
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      mongo-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  customer-service:
+    image: trongphan2801/gara-customer-service:latest
+    container_name: customer-service
+    # ports:
+    #   - "8083:8083"
+    environment:
+      # Biến này sẽ đè nát chữ 'localhost' trong file application.yml, ép nó gọi vào container postgres-db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/customer_vehicle_db
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - SPRING_DATA_REDIS_HOST=gara-redis
+      - TZ=Asia/Ho_Chi_Minh
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      postgres-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  inventory-service:
+    image: trongphan2801/gara-inventory-service:latest
+    container_name: inventory-service
+    # ports:
+    #   - "8084:8084"
+    environment:
+      # Ép Spring Boot gọi vào container tên là gara-mysql trong mạng nội bộ Docker thay vì localhost
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/inventory_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      # Ép Eureka Client đăng ký thông qua tên container eureka-service
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - SPRING_DATA_REDIS_HOST=gara-redis
+      - TZ=Asia/Ho_Chi_Minh
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  billing-service:
+    image: trongphan2801/gara-billing-service:latest
+    container_name: billing-service
+    # ports:
+    #   - "8085:8085"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/billing_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - TZ=Asia/Ho_Chi_Minh
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification-service:
+    image: trongphan2801/gara-notification-service:latest
+    container_name: notification-service
+    # ports:
+    #   - "8086:8086"
+    environment:
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - FIREBASE_SERVICE_ACCOUNT_PATH=/app/firebase-service-account.json
+      - SPRING_DATASOURCE_URL=jdbc:mysql://gara-mysql:3306/notification_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - TZ=Asia/Ho_Chi_Minh
+    volumes:
+      - ./backend-services/firebase-service-account.json:/app/firebase-service-account.json:ro
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://127.0.0.1:3100/loki/api/v1/push"
+        mode: non-blocking
+        max-buffer-size: 4m
+        loki-retries: "2"
+    networks:
+      - gara-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - gara-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - gara-network
+    volumes:
+      - loki-data:/loki
+
+  grafana:
+    image: grafana/grafana-oss:10.4.1
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - gara-network
+    depends_on:
+      - prometheus
+      - loki
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  mysql-data:
+  mongo-data:
+  prometheus-data:
+  loki-data:
+  grafana-data:
+  postgres-data:
+
+networks:
+  gara-network:
+    driver: bridge

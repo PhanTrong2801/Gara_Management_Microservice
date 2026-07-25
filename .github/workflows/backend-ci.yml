@@ -1,51 +1,64 @@
 name: Backend CI Pipeline
 
-# 1. KÍCH HOẠT (Trigger)
-# Đoạn này bảo Robot: "Hãy thức dậy mỗi khi có ai đó Push code lên nhánh 'main'
-# hoặc tạo Pull Request đòi gộp code vào nhánh 'main'".
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "develop" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master", "develop" ]
 
-# 2. CÁC CÔNG VIỆC CẦN LÀM (Jobs)
 jobs:
-  build-and-test:
-    # 2.1 CÀI MÁY ẢO: Xin một máy ảo Ubuntu mới tinh từ Microsoft
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-    # BƯỚC 1: Tải code từ kho GitHub của bạn về cái máy ảo Ubuntu vừa xin
-    - name: Tải mã nguồn về máy ảo (Checkout code)
+    - name: Checkout Code
       uses: actions/checkout@v3
 
-    # BƯỚC 2: Cài đặt môi trường Java
-    # Vì máy ảo mới tinh chưa có Java, Robot phải tự động tải và cài Java 21 vào máy
-    - name: Cài đặt Java 21 (Temurin)
+    - name: Set up Java 21
       uses: actions/setup-java@v3
       with:
         java-version: '21'
         distribution: 'temurin'
-        cache: maven # Bật tính năng Cache để lần sau chạy test nhanh hơn
+        cache: maven
 
-    # BƯỚC 3: Chạy Test cho Auth Service
-    # Đi vào thư mục auth-service và gõ lệnh test
-    - name: Chạy Unit Test cho Auth Service
+    # BƯỚC 1: Dịch toàn bộ Code ra file .jar (Dành cho cả master và develop)
+    - name: Compile tất cả Microservices (Maven Build)
       run: |
-        cd backend-services/auth-service
-        mvn clean test
+        SERVICES=("api-gateway" "auth-service" "billing-service" "customer-service" "eureka-service" "inventory-service" "notification-service" "repair-service")
+        for SERVICE in "${SERVICES[@]}"; do
+          echo "Đang Build $SERVICE..."
+          cd backend-services/$SERVICE
+          mvn clean package -DskipTests
+          cd ../..
+        done
 
-    # BƯỚC 4: Chạy Test cho Repair Service
-    # Đi vào thư mục repair-service và gõ lệnh test
-    - name: Chạy Unit Test cho Repair Service
+    # BƯỚC 2: Chạy các bài Test cốt lõi
+    - name: Chạy Unit Tests
       run: |
-        cd backend-services/repair-service
-        mvn clean test
+        cd backend-services/auth-service && mvn test
+        cd ../../backend-services/repair-service && mvn test
 
-    # BƯỚC 5 (Tùy chọn): Kiểm tra Compile cho các service chưa có file Test
-    # Để chắc chắn code không bị lỗi cú pháp gõ sai, ta bắt Robot dịch (compile) API Gateway
-    - name: Kiểm tra Compile API Gateway (Bỏ qua Test vì chưa viết)
+    # BƯỚC 3 & 4: (Chỉ chạy trên nhánh master) Đăng nhập và Đẩy Image lên Docker Hub
+    - name: Đăng nhập vào Docker Hub
+      if: github.ref == 'refs/heads/master'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build và Push 8 Docker Images
+      if: github.ref == 'refs/heads/master'
       run: |
-        cd backend-services/api-gateway
-        mvn clean compile
+        SERVICES=("api-gateway" "auth-service" "billing-service" "customer-service" "eureka-service" "inventory-service" "notification-service" "repair-service")
+        for SERVICE in "${SERVICES[@]}"; do
+          echo "Đang đóng gói và đẩy Image cho $SERVICE..."
+          cd backend-services/$SERVICE
+          
+          # Đặt tên Image theo chuẩn: username/gara-tên_service:latest
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/gara-$SERVICE:latest"
+          
+          docker build -t $IMAGE_NAME .
+          docker push $IMAGE_NAME
+          
+          cd ../..
+        done
