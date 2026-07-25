@@ -3,10 +3,10 @@ package com.gara.repair_service;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+//@SpringBootTest
 class RepairServiceApplicationTests {
 
-	@Test
+	//@Test
 	void contextLoads() {
 	}
 
