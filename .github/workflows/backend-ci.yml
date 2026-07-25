@@ -1,0 +1,51 @@
+name: Backend CI Pipeline
+
+# 1. KÍCH HOẠT (Trigger)
+# Đoạn này bảo Robot: "Hãy thức dậy mỗi khi có ai đó Push code lên nhánh 'main'
+# hoặc tạo Pull Request đòi gộp code vào nhánh 'main'".
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+# 2. CÁC CÔNG VIỆC CẦN LÀM (Jobs)
+jobs:
+  build-and-test:
+    # 2.1 CÀI MÁY ẢO: Xin một máy ảo Ubuntu mới tinh từ Microsoft
+    runs-on: ubuntu-latest
+
+    steps:
+    # BƯỚC 1: Tải code từ kho GitHub của bạn về cái máy ảo Ubuntu vừa xin
+    - name: Tải mã nguồn về máy ảo (Checkout code)
+      uses: actions/checkout@v3
+
+    # BƯỚC 2: Cài đặt môi trường Java
+    # Vì máy ảo mới tinh chưa có Java, Robot phải tự động tải và cài Java 21 vào máy
+    - name: Cài đặt Java 21 (Temurin)
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven # Bật tính năng Cache để lần sau chạy test nhanh hơn
+
+    # BƯỚC 3: Chạy Test cho Auth Service
+    # Đi vào thư mục auth-service và gõ lệnh test
+    - name: Chạy Unit Test cho Auth Service
+      run: |
+        cd backend-services/auth-service
+        mvn clean test
+
+    # BƯỚC 4: Chạy Test cho Repair Service
+    # Đi vào thư mục repair-service và gõ lệnh test
+    - name: Chạy Unit Test cho Repair Service
+      run: |
+        cd backend-services/repair-service
+        mvn clean test
+
+    # BƯỚC 5 (Tùy chọn): Kiểm tra Compile cho các service chưa có file Test
+    # Để chắc chắn code không bị lỗi cú pháp gõ sai, ta bắt Robot dịch (compile) API Gateway
+    - name: Kiểm tra Compile API Gateway (Bỏ qua Test vì chưa viết)
+      run: |
+        cd backend-services/api-gateway
+        mvn clean compile
