@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../../api/axiosConfig';
 
 const ProfileUpdateModal = ({ profile, onUpdateComplete }) => {
     // Thông tin cá nhân
@@ -15,11 +15,13 @@ const ProfileUpdateModal = ({ profile, onUpdateComplete }) => {
     const [year, setYear] = useState('');
 
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setFieldErrors({});
         
         if (!phoneNumber || phoneNumber.length < 10) {
             setError('Vui lòng nhập số điện thoại hợp lệ (10-11 số).');
@@ -33,32 +35,40 @@ const ProfileUpdateModal = ({ profile, onUpdateComplete }) => {
 
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const headers = { Authorization: `Bearer ${token}` };
-
             // 1. Cập nhật thông tin cá nhân
-            await axios.put(`http://localhost:8080/api/customers/${profile.id}`, {
+            await api.put(`/customers/${profile.id}`, {
                 fullName: fullName,
                 phoneNumber: phoneNumber,
                 email: email,
                 address: address
-            }, { headers });
+            });
 
             // 2. Thêm thông tin xe
-            await axios.post('http://localhost:8080/api/customers/vehicles', {
+            await api.post('/customers/vehicles', {
                 licensePlate: licensePlate,
                 brand: brand,
                 model: model,
                 year: year ? parseInt(year) : null,
                 customerId: profile.id
-            }, { headers });
+            });
 
             // Gọi hàm callback báo hiệu hoàn tất để ẩn Modal và refresh dữ liệu
             onUpdateComplete();
 
         } catch (err) {
             console.error("Lỗi cập nhật:", err);
-            setError(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật dữ liệu. Có thể số điện thoại hoặc biển số xe đã tồn tại.');
+            
+            // Check for Spring Boot validation errors format
+            if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+                const newFieldErrors = {};
+                err.response.data.errors.forEach(e => {
+                    newFieldErrors[e.field] = e.defaultMessage;
+                });
+                setFieldErrors(newFieldErrors);
+                setError('Vui lòng kiểm tra lại thông tin nhập liệu.');
+            } else {
+                setError(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật dữ liệu. Có thể số điện thoại hoặc biển số xe đã tồn tại.');
+            }
         } finally {
             setLoading(false);
         }
@@ -88,23 +98,27 @@ const ProfileUpdateModal = ({ profile, onUpdateComplete }) => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên *</label>
                                 <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
-                                    className="w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    className={`w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.fullName ? 'border-red-500' : ''}`} />
+                                {fieldErrors.fullName && <p className="text-red-500 text-xs mt-1">{fieldErrors.fullName}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại *</label>
                                 <input type="text" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)}
                                     placeholder="Ví dụ: 0912345678"
-                                    className="w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    className={`w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.phoneNumber ? 'border-red-500' : ''}`} />
+                                {fieldErrors.phoneNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.phoneNumber}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    className={`w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.email ? 'border-red-500' : ''}`} />
+                                {fieldErrors.email && <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
                                 <input type="text" value={address} onChange={(e) => setAddress(e.target.value)}
-                                    className="w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    className={`w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.address ? 'border-red-500' : ''}`} />
+                                {fieldErrors.address && <p className="text-red-500 text-xs mt-1">{fieldErrors.address}</p>}
                             </div>
                         </div>
                     </div>
@@ -117,25 +131,29 @@ const ProfileUpdateModal = ({ profile, onUpdateComplete }) => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Biển số xe *</label>
                                 <input type="text" required value={licensePlate} onChange={(e) => setLicensePlate(e.target.value.toUpperCase())}
                                     placeholder="Ví dụ: 30A-12345"
-                                    className="w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500 uppercase" />
+                                    className={`w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500 uppercase ${fieldErrors.licensePlate ? 'border-red-500' : ''}`} />
+                                {fieldErrors.licensePlate && <p className="text-red-500 text-xs mt-1">{fieldErrors.licensePlate}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Hãng xe *</label>
                                 <input type="text" required value={brand} onChange={(e) => setBrand(e.target.value)}
                                     placeholder="Ví dụ: Toyota, VinFast"
-                                    className="w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    className={`w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.brand ? 'border-red-500' : ''}`} />
+                                {fieldErrors.brand && <p className="text-red-500 text-xs mt-1">{fieldErrors.brand}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Dòng xe (Model)</label>
                                 <input type="text" value={model} onChange={(e) => setModel(e.target.value)}
                                     placeholder="Ví dụ: Vios, Fadil"
-                                    className="w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    className={`w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.model ? 'border-red-500' : ''}`} />
+                                {fieldErrors.model && <p className="text-red-500 text-xs mt-1">{fieldErrors.model}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Năm sản xuất</label>
                                 <input type="number" value={year} onChange={(e) => setYear(e.target.value)}
                                     placeholder="Ví dụ: 2022"
-                                    className="w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    className={`w-full border rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500 ${fieldErrors.year ? 'border-red-500' : ''}`} />
+                                {fieldErrors.year && <p className="text-red-500 text-xs mt-1">{fieldErrors.year}</p>}
                             </div>
                         </div>
                     </div>
