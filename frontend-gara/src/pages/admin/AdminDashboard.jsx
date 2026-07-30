@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, Activity, DollarSign, Package, ArrowUpRight, ArrowDownRight, Edit2, X, UserPlus, Settings } from 'lucide-react';
+import { Users, Activity, DollarSign, Package, ArrowUpRight, ArrowDownRight, Edit2, X, UserPlus, Settings, AlertTriangle } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import api from '../../api/axiosConfig';
 
 export default function AdminDashboard() {
@@ -25,8 +26,13 @@ export default function AdminDashboard() {
   const [dashboardStats, setDashboardStats] = useState({
     totalRevenue: 0,
     totalRepairs: 0,
-    lowStockItems: 0
+    lowStockItems: 0,
+    monthlyRevenues: [],
+    repairStatus: []
   });
+
+  const [lowStockParts, setLowStockParts] = useState([]);
+  const COLORS = ['#f59e0b', '#3b82f6', '#10b981']; // Pending (Yellow), Repairing (Blue), Completed (Green)
 
   const stats = [
     { title: 'Tổng Doanh Thu', value: `${dashboardStats.totalRevenue.toLocaleString()} ₫`, change: 'Thực tế', isIncrease: true, icon: <DollarSign className="w-6 h-6 text-emerald-500" /> },
@@ -42,34 +48,33 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      // Fetch all required data in parallel
-      const [usersRes, invoicesRes, repairsRes, inventoryRes] = await Promise.all([
+      // Fetch all required data in parallel using new Stats APIs
+      const [usersRes, billingStatsRes, repairStatsRes, lowStockRes] = await Promise.all([
         api.get('/auth/users'),
-        api.get('/billing/invoices'),
-        api.get('/repair/orders'),
-        api.get('/inventory/parts')
+        api.get('/billing/invoices/stats'),
+        api.get('/repair/orders/stats'),
+        api.get('/inventory/parts/low-stock?size=5')
       ]);
 
       const usersData = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.content || []);
       setUsers(usersData);
 
-      // Tính tổng doanh thu từ hóa đơn đã thanh toán
-      const invoices = invoicesRes.data.content || invoicesRes.data || [];
-      const revenue = invoices
-        .filter(inv => inv.status === 'PAID')
-        .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
-
-      // Đếm tổng phiếu sửa chữa
-      const repairs = repairsRes.data.content || repairsRes.data || [];
-
-      // Đếm số lượng phụ tùng sắp hết (ví dụ < 10 cái)
-      const parts = inventoryRes.data.content || inventoryRes.data || [];
-      const lowStockCount = parts.filter(p => p.stockQuantity < 10).length;
+      const bStats = billingStatsRes.data;
+      const rStats = repairStatsRes.data;
+      const lowStockData = lowStockRes.data.content || lowStockRes.data || [];
+      
+      setLowStockParts(lowStockData);
 
       setDashboardStats({
-        totalRevenue: revenue,
-        totalRepairs: repairs.length,
-        lowStockItems: lowStockCount
+        totalRevenue: bStats.totalRevenue || 0,
+        totalRepairs: rStats.totalOrders || 0,
+        lowStockItems: lowStockRes.data.totalElements || lowStockData.length,
+        monthlyRevenues: bStats.monthlyRevenues || [],
+        repairStatus: [
+          { name: 'Chờ sửa', value: rStats.pendingCount || 0 },
+          { name: 'Đang sửa', value: rStats.repairingCount || 0 },
+          { name: 'Hoàn thành', value: rStats.completedCount || 0 }
+        ]
       });
       
     } catch (err) {
@@ -187,6 +192,49 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-800 mb-6">Doanh Thu 6 Tháng Gần Nhất</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dashboardStats.monthlyRevenues}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b'}} tickFormatter={(value) => `${value / 1000000}M`} />
+                <RechartsTooltip cursor={{fill: '#f8fafc'}} formatter={(value) => [`${value.toLocaleString()} ₫`, 'Doanh thu']} />
+                <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
+          <h3 className="text-lg font-bold text-gray-800 mb-2 w-full text-left">Trạng Thái Sửa Chữa</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={dashboardStats.repairStatus}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {dashboardStats.repairStatus.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <RechartsTooltip />
+                <Legend verticalAlign="bottom" height={36}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* User Management Table */}
@@ -261,22 +309,33 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* System Activity */}
-        <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">Hoạt Động Hệ Thống</h3>
-          <div className="space-y-6">
-            <div className="relative pl-4 border-l-2 border-blue-200">
-              <div className="absolute w-3 h-3 bg-blue-500 rounded-full -left-[7px] top-1"></div>
-              <p className="text-sm font-medium text-gray-800">Sao lưu dữ liệu tự động</p>
-              <p className="text-xs text-gray-500 mt-1">Hôm nay, 02:00 AM</p>
-            </div>
-            
-            <div className="relative pl-4 border-l-2 border-emerald-200">
-              <div className="absolute w-3 h-3 bg-emerald-500 rounded-full -left-[7px] top-1"></div>
-              <p className="text-sm font-medium text-gray-800">Cập nhật giá phụ tùng</p>
-              <p className="text-xs text-gray-500 mt-1">Hôm qua, 15:30 PM</p>
-            </div>
+        {/* System Alerts & Low Stock */}
+        <div className="p-6 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+          <h3 className="text-lg font-bold text-rose-600 mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" /> Cảnh Báo Phụ Tùng
+          </h3>
+          
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3">
+            {lowStockParts.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-6">Không có phụ tùng nào sắp hết.</p>
+            ) : (
+              lowStockParts.map(part => (
+                <div key={part.id} className="p-3 bg-rose-50 border border-rose-100 rounded-xl">
+                  <div className="flex justify-between items-start mb-1">
+                    <p className="font-semibold text-rose-800 text-sm truncate pr-2">{part.name}</p>
+                    <span className="px-2 py-0.5 bg-rose-200 text-rose-800 text-xs font-bold rounded">
+                      Còn {part.stockQuantity}
+                    </span>
+                  </div>
+                  <p className="text-xs text-rose-600">Mã: {part.partCode} • Tối thiểu: {part.minStockLevel}</p>
+                </div>
+              ))
+            )}
           </div>
+          
+          <button onClick={() => window.location.href = '/dashboard/suppliers'} className="mt-4 w-full py-2 bg-rose-100 text-rose-700 font-semibold rounded-lg hover:bg-rose-200 transition-colors text-sm">
+            Tạo Đơn Nhập Hàng
+          </button>
         </div>
       </div>
 

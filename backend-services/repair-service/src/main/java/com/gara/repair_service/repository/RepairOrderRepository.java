@@ -23,4 +23,6 @@ public interface RepairOrderRepository extends MongoRepository<RepairOrder, Stri
            "  { 'status': { '$regex': ?0, '$options': 'i' } } " +
            "] }")
     Page<RepairOrder> searchRepairOrders(String keyword, Pageable pageable);
+
+    Long countByStatus(String status);
 }
