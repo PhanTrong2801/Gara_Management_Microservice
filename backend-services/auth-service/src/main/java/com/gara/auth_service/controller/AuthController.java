@@ -3,7 +3,9 @@ package com.gara.auth_service.controller;
 import com.gara.auth_service.dto.AuthRequest;
 import com.gara.auth_service.dto.AuthResponse;
 import com.gara.auth_service.dto.RegisterRequest;
+import com.gara.auth_service.dto.PhoneLoginRequest;
 import com.gara.auth_service.service.AuthService;
+import com.gara.auth_service.service.FirebaseTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final FirebaseTokenService firebaseTokenService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request){
@@ -25,6 +28,17 @@ public class AuthController {
             AuthResponse response = authService.login(request);
             return ResponseEntity.ok(response);
         }catch (RuntimeException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/login-phone")
+    public ResponseEntity<?> loginWithPhone(@RequestBody PhoneLoginRequest request) {
+        try {
+            AuthResponse response = firebaseTokenService.loginWithPhone(request.getIdToken());
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            e.printStackTrace(); // Log error trace to console
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }

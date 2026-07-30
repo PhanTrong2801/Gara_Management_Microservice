@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/LoginPage';
 import DashboardLayout from './layouts/DashboardLayout';
 import CreateRepairOrder from "./pages/repair/CreateRepairOrder.jsx";
@@ -24,15 +25,17 @@ import CustomerDashboard from './pages/customer-portal/CustomerDashboard.jsx';
 import RepairTracking from './pages/customer-portal/RepairTracking.jsx';
 import BookingAppointment from './pages/customer-portal/BookingAppointment.jsx';
 import CustomerBilling from './pages/customer-portal/CustomerBilling.jsx';
+import CustomerLogin from './pages/customer-portal/CustomerLogin.jsx';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Mặc định vào Web là đẩy sang trang Login */}
-        <Route path="/" element={<Navigate to="/login" />} />
+        {/* Landing Page dành cho Khách vãng lai */}
+        <Route path="/" element={<LandingPage />} />
 
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/customer/login" element={<CustomerLogin />} />
         
         {/* Callback từ VNPay */}
         <Route path="/vnpay-return" element={<VNPayReturn />} />
