@@ -122,7 +122,10 @@ services:
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - SPRING_RABBITMQ_HOST=gara-rabbitmq
+      - FIREBASE_SERVICE_ACCOUNT_PATH=/app/firebase-service-account.json
       - TZ=Asia/Ho_Chi_Minh
+    volumes:
+      - ./backend-services/firebase-service-account.json:/app/firebase-service-account.json:ro
     logging:
       driver: loki
       options:
