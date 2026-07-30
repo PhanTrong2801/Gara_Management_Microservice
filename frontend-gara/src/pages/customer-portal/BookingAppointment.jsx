@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, CheckCircle, Clock, Check, XCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../api/axiosConfig';
 
 const BookingAppointment = () => {
     const [date, setDate] = useState('');
@@ -15,12 +15,10 @@ const BookingAppointment = () => {
     const fetchAppointments = async () => {
         if (!customerId) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`http://localhost:8080/api/repair/appointments/customer/${customerId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get(`/repair/appointments/customer/${customerId}`);
+            const dataList = res.data.content || res.data || [];
             // Sắp xếp lịch hẹn mới nhất lên đầu
-            const sortedAppointments = res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const sortedAppointments = dataList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             setAppointments(sortedAppointments);
         } catch (error) {
             console.error("Lỗi lấy danh sách lịch hẹn:", error);
@@ -35,15 +33,17 @@ const BookingAppointment = () => {
         e.preventDefault();
         if (!customerId) return alert("Không tìm thấy thông tin khách hàng, vui lòng tải lại trang.");
 
+        if (description.trim().length < 10) {
+            alert("Vui lòng nhập mô tả chi tiết hơn (ít nhất 10 ký tự).");
+            return;
+        }
+
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            await axios.post('http://localhost:8080/api/repair/appointments', {
+            await api.post('/repair/appointments', {
                 customerId: Number(customerId),
-                appointmentDate: date + "T00:00:00", // Basic formatting
+                appointmentDate: date + "T00:00:00",
                 description: description
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
             setSuccessMsg("Đặt lịch thành công! Chúng tôi sẽ liên hệ lại với bạn sớm nhất.");
             setDate('');

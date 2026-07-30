@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../api/axiosConfig';
 
 const CustomerBilling = () => {
     const [invoices, setInvoices] = useState([]);
@@ -12,11 +12,9 @@ const CustomerBilling = () => {
         if (!customerId) return;
         const fetchInvoices = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get(`http://localhost:8080/api/billing/invoices/customer/${customerId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setInvoices(res.data);
+                const res = await api.get(`/billing/invoices/customer/${customerId}`);
+                const dataList = res.data.content || res.data || [];
+                setInvoices(dataList);
             } catch (error) {
                 console.error("Lỗi lấy danh sách hóa đơn:", error);
             }

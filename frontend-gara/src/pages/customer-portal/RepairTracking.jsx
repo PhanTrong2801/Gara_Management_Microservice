@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Wrench } from 'lucide-react';
-import axios from 'axios';
+import api from '../../api/axiosConfig';
 import CustomerRepairOrderDetailsModal from './CustomerRepairOrderDetailsModal';
 
 const RepairTracking = () => {
@@ -16,11 +16,9 @@ const RepairTracking = () => {
         if (!customerId) return;
         const fetchOrders = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get(`http://localhost:8080/api/repair/orders/customer/${customerId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setOrders(res.data);
+                const res = await api.get(`/repair/orders/customer/${customerId}`);
+                const dataList = res.data.content || res.data || [];
+                setOrders(dataList);
             } catch (error) {
                 console.error("Lỗi lấy danh sách sửa chữa:", error);
             }

@@ -82,6 +82,7 @@ export default function AdminDashboard() {
 
   const fetchUsers = async () => {
     try {
+      const response = await api.get('/auth/users');
       const usersData = Array.isArray(response.data) ? response.data : (response.data?.content || []);
       setUsers(usersData);
     } catch (err) {

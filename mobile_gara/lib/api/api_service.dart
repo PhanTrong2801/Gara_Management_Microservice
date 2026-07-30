@@ -3,10 +3,11 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // LƯU Ý: 
+  // LƯU Ý:
   // - Dùng 'http://10.0.2.2:8080/api' nếu chạy trên máy ảo Android (Emulator) kết nối về localhost của máy tính.
   // - Dùng IP Lan của máy bạn (ví dụ: 'http://192.168.1.5:8080/api') nếu chạy trên thiết bị thật.
-  static const String baseUrl = "http://10.0.2.2:8080/api";
+  // static const String baseUrl = "http://10.0.2.2:8080/api";
+  static const String baseUrl = "http://api.gara-autoflow.online:8080/api";
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -22,7 +23,10 @@ class ApiService {
   }
 
   // POST Request
-  static Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
+  static Future<http.Response> post(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
     final url = Uri.parse('$baseUrl$endpoint');
     final headers = await getHeaders();
     return await http.post(url, headers: headers, body: jsonEncode(body));
@@ -43,7 +47,10 @@ class ApiService {
   }
 
   // PUT Request
-  static Future<http.Response> put(String endpoint, Map<String, dynamic> body) async {
+  static Future<http.Response> put(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
     final url = Uri.parse('$baseUrl$endpoint');
     final headers = await getHeaders();
     return await http.put(url, headers: headers, body: jsonEncode(body));

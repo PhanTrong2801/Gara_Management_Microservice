@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Wrench, CheckCircle, Clock, AlertTriangle, FileText, Settings } from 'lucide-react';
-import axios from 'axios';
+import api from '../../api/axiosConfig';
 import MechanicOrderDetailsModal from './MechanicOrderDetailsModal';
 
 const MechanicDashboard = () => {
@@ -14,10 +14,7 @@ const MechanicDashboard = () => {
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const headers = { Authorization: `Bearer ${token}` };
-
-            const res = await axios.get('http://localhost:8080/api/repair/orders', { headers });
+            const res = await api.get('/repair/orders');
             
             const allOrders = res.data.content || res.data || [];
             const activeOrders = allOrders.filter(o => o.status === 'REPAIRING');
@@ -26,7 +23,7 @@ const MechanicDashboard = () => {
             // Fetch thông tin khách hàng
             const customerIds = [...new Set(activeOrders.map(a => a.customerId))];
             if (customerIds.length > 0) {
-                const customersRes = await axios.get('http://localhost:8080/api/customers', { headers });
+                const customersRes = await api.get('/customers');
                 const customersList = customersRes.data.content || customersRes.data || [];
                 const map = {};
                 customersList.forEach(c => {

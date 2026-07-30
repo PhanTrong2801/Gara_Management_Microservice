@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Save, AlertTriangle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../api/axiosConfig';
 
 export default function MechanicOrderDetailsModal({ isOpen, onClose, order, onSaveSuccess }) {
   const [tasks, setTasks] = useState([]);
@@ -23,15 +23,12 @@ export default function MechanicOrderDetailsModal({ isOpen, onClose, order, onSa
   const handleSaveTasks = async () => {
     try {
       setSubmitting(true);
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
       // Update từng task qua API
       const promises = tasks.map((task, index) => {
-        return axios.put(`http://localhost:8080/api/repair/orders/${order.id}/tasks/${index}`, {
+        return api.put(`/repair/orders/${order.id}/tasks/${index}`, {
           status: task.status,
           mechanicNote: task.mechanicNote || ""
-        }, { headers });
+        });
       });
 
       await Promise.all(promises);
@@ -41,9 +38,8 @@ export default function MechanicOrderDetailsModal({ isOpen, onClose, order, onSa
       if (allDone) {
         const confirmComplete = window.confirm("Tất cả công việc đã hoàn thành. Bạn có muốn đổi trạng thái Phiếu sang Đã Sửa Xong không?");
         if (confirmComplete) {
-            await axios.put(`http://localhost:8080/api/repair/orders/${order.id}/status`, 
-                { status: 'COMPLETED' },
-                { headers }
+            await api.put(`/repair/orders/${order.id}/status`, 
+                { status: 'COMPLETED' }
             );
         }
       }

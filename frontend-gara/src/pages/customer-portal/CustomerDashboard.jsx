@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Wrench, Calendar, FileText, ArrowRight, User } from 'lucide-react';
-import axios from 'axios';
+import api from '../../api/axiosConfig';
 import ProfileUpdateModal from './ProfileUpdateModal';
 
 const CustomerDashboard = () => {
@@ -20,9 +20,9 @@ const CustomerDashboard = () => {
             const headers = { Authorization: `Bearer ${token}` };
             
             const [ordersRes, apptsRes, invoicesRes] = await Promise.all([
-                axios.get(`http://localhost:8080/api/repair/orders/customer/${customerId}`, { headers }).catch(() => ({data: []})),
-                axios.get(`http://localhost:8080/api/repair/appointments/customer/${customerId}`, { headers }).catch(() => ({data: []})),
-                axios.get(`http://localhost:8080/api/billing/invoices/customer/${customerId}`, { headers }).catch(() => ({data: []}))
+                api.get(`/repair/orders/customer/${customerId}`).catch(() => ({data: []})),
+                api.get(`/repair/appointments/customer/${customerId}`).catch(() => ({data: []})),
+                api.get(`/billing/invoices/customer/${customerId}`).catch(() => ({data: []}))
             ]);
             
             const activeRepairsCount = (ordersRes.data.content || ordersRes.data || []).filter(o => o.status !== 'COMPLETED').length;
@@ -43,9 +43,7 @@ const CustomerDashboard = () => {
     const fetchProfile = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('http://localhost:8080/api/customers/me', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get('/customers/me');
             setProfile(res.data);
             localStorage.setItem('customerId', res.data.id);
             

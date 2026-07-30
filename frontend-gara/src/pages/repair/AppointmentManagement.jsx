@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CheckCircle, XCircle, Search, Clock, FileText } from 'lucide-react';
-import axios from 'axios';
+import api from '../../api/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import { useTablePagination } from '../../hooks/useTablePagination';
 import Pagination from '../../components/common/Pagination';
@@ -25,11 +25,8 @@ const AppointmentManagement = () => {
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            const headers = { Authorization: `Bearer ${token}` };
-
             // 1. Lấy danh sách lịch hẹn
-            const res = await axios.get(`http://localhost:8080/api/repair/appointments?page=${currentPage - 1}&size=10&search=${debouncedSearch}&sort=createdAt,desc`, { headers });
+            const res = await api.get(`/repair/appointments?page=${currentPage - 1}&size=10&search=${debouncedSearch}&sort=createdAt,desc`);
             const dataList = res.data.content || [];
             setAppointments(dataList);
             const pageMeta = res.data.page || res.data;
@@ -39,7 +36,7 @@ const AppointmentManagement = () => {
             // 2. Lấy thông tin khách hàng để map tên
             const customerIds = [...new Set(dataList.map(a => a.customerId))];
             if (customerIds.length > 0) {
-                const customerPromises = customerIds.map(id => axios.get(`http://localhost:8080/api/customers/${id}`, { headers }));
+                const customerPromises = customerIds.map(id => api.get(`/customers/${id}`));
                 const responses = await Promise.all(customerPromises);
                 
                 const map = {};
@@ -62,11 +59,7 @@ const AppointmentManagement = () => {
 
     const handleUpdateStatus = async (id, status) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:8080/api/repair/appointments/${id}/status`,
-                { status: status },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await api.put(`/repair/appointments/${id}/status`, { status: status });
             // Refresh
             fetchAppointments();
         } catch (error) {
