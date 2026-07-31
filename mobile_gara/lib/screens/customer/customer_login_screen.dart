@@ -1,202 +1,252 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../api/api_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import 'customer_dashboard.dart';
 
 class CustomerLoginScreen extends StatefulWidget {
+  const CustomerLoginScreen({super.key});
+
   @override
-  _CustomerLoginScreenState createState() => _CustomerLoginScreenState();
+  State<CustomerLoginScreen> createState() => _CustomerLoginScreenState();
 }
 
 class _CustomerLoginScreenState extends State<CustomerLoginScreen> {
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
-  
-  bool _otpSent = false;
-  bool _isLoading = false;
-  String _verificationId = "";
-  
-  // Sử dụng ApiService.baseUrl thay vì hardcode
-  final String _apiUrl = "${ApiService.baseUrl}/auth/login-phone"; 
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<void> _sendOTP() async {
-    setState(() { _isLoading = true; });
-    
-    String phone = _phoneController.text.trim();
-    if (phone.startsWith("0")) {
-      phone = "+84" + phone.substring(1);
-    } else if (!phone.startsWith("+")) {
-      phone = "+" + phone;
+  String _verificationId = "";
+  bool _isOtpSent = false;
+  bool _isLoading = false;
+
+  void _sendOtp() async {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập số điện thoại')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    String formattedPhone = phone;
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '+84${formattedPhone.substring(1)}';
+    } else if (!formattedPhone.startsWith('+')) {
+      formattedPhone = '+$formattedPhone';
     }
 
     try {
-      await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: phone,
+      await _auth.verifyPhoneNumber(
+        phoneNumber: formattedPhone,
         verificationCompleted: (PhoneAuthCredential credential) async {
-          // Android only: Tự động bắt OTP SMS và login
-          await _signInWithCredential(credential);
+          // Tự động xác thực nếu Android đọc được SMS
+          await _auth.signInWithCredential(credential);
+          _onFirebaseLoginSuccess();
         },
         verificationFailed: (FirebaseAuthException e) {
-          _showError("Gửi OTP thất bại: ${e.message}");
-          setState(() { _isLoading = false; });
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi gửi SMS: ${e.message}')),
+          );
         },
         codeSent: (String verificationId, int? resendToken) {
           setState(() {
             _verificationId = verificationId;
-            _otpSent = true;
+            _isOtpSent = true;
             _isLoading = false;
           });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Mã OTP đã được gửi đến điện thoại của bạn')),
+          );
         },
         codeAutoRetrievalTimeout: (String verificationId) {
           _verificationId = verificationId;
         },
       );
     } catch (e) {
-      _showError("Lỗi: $e");
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi ngoại lệ: $e')),
+      );
     }
   }
 
-  Future<void> _verifyOTP() async {
-    setState(() { _isLoading = true; });
+  void _verifyOtp() async {
+    final otp = _otpController.text.trim();
+    if (otp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập đúng 6 số OTP')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       PhoneAuthCredential credential = PhoneAuthProvider.credential(
         verificationId: _verificationId,
-        smsCode: _otpController.text.trim(),
+        smsCode: otp,
       );
-      await _signInWithCredential(credential);
+
+      await _auth.signInWithCredential(credential);
+      _onFirebaseLoginSuccess();
     } catch (e) {
-      _showError("Mã OTP không đúng hoặc đã hết hạn!");
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mã OTP không đúng hoặc đã hết hạn')),
+      );
     }
   }
 
-  Future<void> _signInWithCredential(PhoneAuthCredential credential) async {
-    try {
-      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      final User? user = userCredential.user;
+  void _onFirebaseLoginSuccess() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      final idToken = await user.getIdToken();
       
-      if (user != null) {
-        String idToken = await user.getIdToken() ?? "";
-        await _loginWithBackend(idToken);
-      }
-    } catch (e) {
-      _showError("Lỗi xác thực: $e");
-      setState(() { _isLoading = false; });
-    }
-  }
-
-  Future<void> _loginWithBackend(String idToken) async {
-    try {
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"idToken": idToken}),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final prefs = await SharedPreferences.getInstance();
-        
-        await prefs.setString('token', data['token']);
-        await prefs.setString('role', data['role']);
-        await prefs.setString('username', data['username']);
-
-        // Giải mã JWT để lấy userId (Tương tự logic cũ)
-        List<String> parts = data['token'].split('.');
-        if (parts.length == 3) {
-          String payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
-          Map<String, dynamic> payloadMap = jsonDecode(payload);
-          if (payloadMap.containsKey('userId')) {
-            await prefs.setInt('userId', payloadMap['userId']);
-          }
+      if (!mounted) return;
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      final success = await authProvider.loginWithPhone(idToken!);
+      if (success && mounted) {
+        final currentUser = authProvider.currentUser;
+        if (currentUser?.role == 'CUSTOMER' || currentUser?.role == 'ROLE_CUSTOMER') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const CustomerDashboard()),
+            (route) => false,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tài khoản của bạn không phải Khách hàng')),
+          );
+          authProvider.logout();
         }
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => CustomerDashboard()),
+      } else if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(authProvider.errorMessage ?? 'Lỗi đăng nhập')),
         );
-      } else {
-        _showError("Lỗi từ hệ thống: ${response.body}");
-        setState(() { _isLoading = false; });
       }
-    } catch (e) {
-      _showError("Không thể kết nối đến máy chủ.");
-      setState(() { _isLoading = false; });
     }
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Đăng nhập Khách hàng")),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Icon(Icons.directions_car, size: 80, color: Colors.blue[900]),
-            SizedBox(height: 20),
-            Text(
-              "Gara AutoFlow Pro", 
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue[900]),
-            ),
-            SizedBox(height: 30),
-            
-            if (!_otpSent) ...[
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: "Số điện thoại",
-                  prefixIcon: Icon(Icons.phone),
-                  border: OutlineInputBorder(),
-                ),
+      appBar: AppBar(
+        title: const Text('Gara Khách Hàng'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.black87,
+      ),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(
+                Icons.security_rounded,
+                size: 80,
+                color: Color(0xFF1D4ED8), // blue-700
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _sendOTP,
-                child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text("Nhận mã OTP"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[900],
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                ),
-              ),
-            ] else ...[
-              TextField(
-                controller: _otpController,
-                keyboardType: TextInputType.number,
+              const SizedBox(height: 24),
+              const Text(
+                'Đăng Nhập Khách Hàng',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, letterSpacing: 5),
-                decoration: InputDecoration(
-                  labelText: "Mã OTP 6 số",
-                  border: OutlineInputBorder(),
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
                 ),
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _verifyOTP,
-                child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text("Xác thực & Đăng nhập"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                ),
+              const SizedBox(height: 8),
+              Text(
+                _isOtpSent ? 'Nhập mã OTP vừa được gửi đến ĐT của bạn' : 'Sử dụng SĐT để theo dõi tiến độ sửa xe',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              TextButton(
-                onPressed: () => setState(() { _otpSent = false; }),
-                child: Text("Quay lại đổi số điện thoại"),
-              )
-            ]
-          ],
+              const SizedBox(height: 36),
+
+              if (!_isOtpSent) ...[
+                TextField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'Số điện thoại',
+                    prefixIcon: const Icon(Icons.phone),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _sendOtp,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: const Color(0xFF1D4ED8),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Nhận mã OTP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ] else ...[
+                TextField(
+                  controller: _otpController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+                  maxLength: 6,
+                  decoration: InputDecoration(
+                    labelText: 'Mã OTP (6 số)',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    counterText: "",
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _verifyOtp,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Xác nhận & Đăng nhập', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isOtpSent = false;
+                      _otpController.clear();
+                    });
+                  },
+                  child: const Text('Quay lại nhập số khác'),
+                )
+              ]
+            ],
+          ),
         ),
       ),
     );

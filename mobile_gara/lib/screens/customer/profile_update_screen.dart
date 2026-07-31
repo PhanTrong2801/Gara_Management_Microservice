@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../api/api_service.dart';
 import '../../models/user.dart';
+import '../../models/customer.dart';
 
 class ProfileUpdateScreen extends StatefulWidget {
   final UserModel user;
+  final CustomerModel customerProfile;
   final VoidCallback onUpdateComplete;
 
   const ProfileUpdateScreen({
     super.key,
     required this.user,
+    required this.customerProfile,
     required this.onUpdateComplete,
   });
 
@@ -35,7 +38,15 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.user.fullName);
+    _nameController = TextEditingController(text: widget.customerProfile.fullName);
+    
+    // Nếu phone bắt đầu bằng N/A_ thì lấy số điện thoại thật từ UserModel
+    String phone = widget.customerProfile.phoneNumber;
+    if (phone.startsWith('N/A')) {
+      _phoneController.text = widget.user.username;
+    } else {
+      _phoneController.text = phone;
+    }
   }
 
   @override
@@ -60,10 +71,8 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
 
     try {
       // 1. Cập nhật thông tin cá nhân khách hàng qua PUT /api/customers/{id}
-      // Vì trên web gọi: axios.put(`http://localhost:8080/api/customers/${profile.id}`, {...})
-      // ID ở đây chính là ID của User (gắn với Customer 1-1 hoặc tương đương)
       final profileResponse = await ApiService.put(
-        '/customers/${widget.user.id}',
+        '/customers/${widget.customerProfile.id}',
         {
           'fullName': _nameController.text.trim(),
           'phoneNumber': _phoneController.text.trim(),
@@ -84,7 +93,7 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
           'brand': _brandController.text.trim(),
           'model': _modelController.text.trim(),
           'year': _yearController.text.isNotEmpty ? int.parse(_yearController.text.trim()) : null,
-          'customerId': widget.user.id,
+          'customerId': widget.customerProfile.id,
         },
       );
 

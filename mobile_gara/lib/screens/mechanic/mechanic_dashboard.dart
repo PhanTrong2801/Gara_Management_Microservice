@@ -6,7 +6,7 @@ import '../../api/api_service.dart';
 import '../../models/schedule.dart';
 import '../../models/repair_order.dart';
 import '../../providers/auth_provider.dart';
-import '../login_screen.dart';
+import '../landing_screen.dart';
 import 'repair_order_detail.dart';
 import '../schedule_registration_screen.dart';
 import '../qr_scanner_screen.dart';
@@ -201,9 +201,10 @@ class _MechanicDashboardState extends State<MechanicDashboard> {
             onPressed: () async {
               await authProvider.logout();
               if (context.mounted) {
-                Navigator.pushReplacement(
+                Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => const LandingScreen()),
+                  (route) => false,
                 );
               }
             },

@@ -53,7 +53,7 @@ public class CustomerService {
 
         Customer customer = new Customer();
         customer.setFullName(dto.getFullName());
-        customer.setPhoneNumber(dto.getPhoneNumber() != null ? dto.getPhoneNumber() : "N/A");
+        customer.setPhoneNumber(dto.getPhoneNumber() != null ? dto.getPhoneNumber() : "N/A_" + dto.getUserId());
         customer.setEmail(dto.getEmail());
         customer.setUserId(dto.getUserId());
 
@@ -98,8 +98,8 @@ public class CustomerService {
                     Customer newCust = new Customer();
                     newCust.setUserId(userId);
                     newCust.setFullName("Người dùng mới");
-                    newCust.setPhoneNumber("N/A");
-                    newCust.setEmail("N/A");
+                    newCust.setPhoneNumber("N/A_" + userId);
+                    newCust.setEmail("N/A_" + userId);
                     return customerRepository.save(newCust);
                 });
     }

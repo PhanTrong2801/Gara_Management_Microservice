@@ -6,7 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../api/api_service.dart';
 import '../qr_scanner_screen.dart';
 import '../../models/schedule.dart';
-import '../login_screen.dart';
+import '../landing_screen.dart';
 
 class ReceptionistDashboard extends StatefulWidget {
   const ReceptionistDashboard({super.key});
@@ -121,9 +121,10 @@ class _ReceptionistDashboardState extends State<ReceptionistDashboard> {
 
   void _logout(BuildContext context) {
     Provider.of<AuthProvider>(context, listen: false).logout();
-    Navigator.pushReplacement(
+    Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      MaterialPageRoute(builder: (_) => const LandingScreen()),
+      (route) => false,
     );
   }
 

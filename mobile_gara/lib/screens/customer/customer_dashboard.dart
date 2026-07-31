@@ -9,7 +9,7 @@ import 'repair_tracking_screen.dart';
 import 'booking_appointment_screen.dart';
 import 'customer_billing_screen.dart';
 import 'customer_profile_screen.dart';
-import '../login_screen.dart';
+import '../landing_screen.dart';
 
 class CustomerDashboard extends StatefulWidget {
   const CustomerDashboard({super.key});
@@ -50,7 +50,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
         setState(() {
           _profile = customer;
           // Kiểm tra xem khách hàng có cần cập nhật hồ sơ bắt buộc không
-          if (customer.phoneNumber == 'N/A' || customer.phoneNumber.isEmpty || customer.vehicles.isEmpty) {
+          if (customer.phoneNumber.startsWith('N/A') || customer.phoneNumber.isEmpty || customer.vehicles.isEmpty) {
             _needUpdateProfile = true;
           } else {
             _needUpdateProfile = false;
@@ -150,9 +150,10 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     }
 
     // Nếu khách hàng chưa cập nhật số điện thoại hoặc xe
-    if (_needUpdateProfile && user != null) {
+    if (_needUpdateProfile && _profile != null && user != null) {
       return ProfileUpdateScreen(
         user: user,
+        customerProfile: _profile!,
         onUpdateComplete: () {
           _fetchProfileAndData();
         },
@@ -188,9 +189,10 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
             onPressed: () async {
               await authProvider.logout();
               if (context.mounted) {
-                Navigator.pushReplacement(
+                Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => const LandingScreen()),
+                  (route) => false,
                 );
               }
             },

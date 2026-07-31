@@ -5,7 +5,7 @@ import '../../api/api_service.dart';
 import '../../models/schedule.dart';
 import '../../models/shift.dart';
 import '../../providers/auth_provider.dart';
-import '../login_screen.dart';
+import '../landing_screen.dart';
 import '../../models/user.dart';
 import '../../models/appointment.dart';
 import '../../models/repair_order.dart';
@@ -376,9 +376,10 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             onPressed: () async {
               await authProvider.logout();
               if (context.mounted) {
-                Navigator.pushReplacement(
+                Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => const LandingScreen()),
+                  (route) => false,
                 );
               }
             },

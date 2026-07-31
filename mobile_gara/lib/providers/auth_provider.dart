@@ -58,6 +58,46 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
 
+  // Đăng nhập bằng Số điện thoại (dành cho Khách Hàng)
+  Future<bool> loginWithPhone(String idToken) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await ApiService.post('/auth/login-phone', {
+        'idToken': idToken,
+      });
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _token = data['token'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', _token!);
+        await prefs.setString('username', data['username']);
+
+        // Tải thông tin chi tiết user
+        await fetchProfile(data['username']);
+        
+        // Setup FCM for push notifications
+        await setupFirebaseMessaging();
+        
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = "Đăng nhập thất bại. Token không hợp lệ hoặc Server lỗi!";
+      }
+    } catch (e) {
+      _errorMessage = "Không thể kết nối đến máy chủ: $e";
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
   // Lấy thông tin cá nhân của user đang đăng nhập
   Future<void> fetchProfile(String username) async {
     try {

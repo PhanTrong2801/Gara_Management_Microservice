@@ -6,14 +6,14 @@ import 'mechanic/mechanic_dashboard.dart';
 import 'customer/customer_dashboard.dart';
 import 'receptionist/receptionist_dashboard.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class StaffLoginScreen extends StatefulWidget {
+  const StaffLoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<StaffLoginScreen> createState() => _StaffLoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _StaffLoginScreenState extends State<StaffLoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -45,14 +45,9 @@ class _LoginScreenState extends State<LoginScreen> {
             context,
             MaterialPageRoute(builder: (_) => const ReceptionistDashboard()),
           );
-        } else if (user.role == 'CUSTOMER' || user.role == 'ROLE_CUSTOMER') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const CustomerDashboard()),
-          );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ứng dụng di động chỉ hỗ trợ Trưởng ca và Thợ máy!')),
+            const SnackBar(content: Text('Kênh này chỉ dành cho Nhân viên hệ thống!')),
           );
           authProvider.logout();
         }
@@ -90,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'GaraOto Management',
+                  'Kênh Nhân Viên & Thợ Máy',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 26,
