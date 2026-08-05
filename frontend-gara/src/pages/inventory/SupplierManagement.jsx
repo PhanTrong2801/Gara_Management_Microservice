@@ -8,7 +8,7 @@ export default function SupplierManagement() {
     const [suppliers, setSuppliers] = useState([]);
     const [purchaseOrders, setPurchaseOrders] = useState([]);
     const [parts, setParts] = useState([]);
-    
+
     // Tab state: 'suppliers' or 'orders'
     const [activeTab, setActiveTab] = useState('suppliers');
 
@@ -159,8 +159,8 @@ export default function SupplierManagement() {
                     <p className="text-sm text-gray-500 mt-1">Đối tác cung cấp phụ tùng và lịch sử nhập hàng</p>
                 </div>
                 <div className="flex gap-2">
-                    <button 
-                        onClick={() => window.location.href = '/inventory'}
+                    <button
+                        onClick={() => window.location.href = '/dashboard/inventory'}
                         className="px-4 py-2 border border-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         Quay lại Kho
@@ -179,13 +179,13 @@ export default function SupplierManagement() {
 
             {/* Tabs */}
             <div className="flex border-b border-gray-200">
-                <button 
+                <button
                     className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'suppliers' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                     onClick={() => setActiveTab('suppliers')}
                 >
                     Danh sách Nhà Cung Cấp
                 </button>
-                <button 
+                <button
                     className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${activeTab === 'orders' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                     onClick={() => setActiveTab('orders')}
                 >
@@ -199,48 +199,48 @@ export default function SupplierManagement() {
                     <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                         <div className="relative w-full md:w-1/3">
                             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                            <input 
-                                type="text" 
-                                placeholder="Tìm kiếm tên NCC hoặc SĐT..." 
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm tên NCC hoặc SĐT..."
                                 value={supplierSearchTerm}
-                                onChange={(e) => {setSupplierSearchTerm(e.target.value); setSupplierPage(1);}}
+                                onChange={(e) => { setSupplierSearchTerm(e.target.value); setSupplierPage(1); }}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow text-sm"
                             />
                         </div>
                     </div>
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <table className="w-full text-left text-sm text-gray-600">
-                        <thead className="bg-gray-50/50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
-                            <tr>
-                                <th className="px-6 py-4">ID</th>
-                                <th className="px-6 py-4">Tên Nhà Cung Cấp</th>
-                                <th className="px-6 py-4">Số điện thoại</th>
-                                <th className="px-6 py-4">Email</th>
-                                <th className="px-6 py-4">Địa chỉ</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {suppliers.map(s => (
-                                <tr key={s.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-semibold text-gray-900">#{s.id}</td>
-                                    <td className="px-6 py-4 font-medium text-blue-700">{s.name}</td>
-                                    <td className="px-6 py-4">{s.contactPhone}</td>
-                                    <td className="px-6 py-4">{s.email}</td>
-                                    <td className="px-6 py-4">{s.address}</td>
+                        <table className="w-full text-left text-sm text-gray-600">
+                            <thead className="bg-gray-50/50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
+                                <tr>
+                                    <th className="px-6 py-4">ID</th>
+                                    <th className="px-6 py-4">Tên Nhà Cung Cấp</th>
+                                    <th className="px-6 py-4">Số điện thoại</th>
+                                    <th className="px-6 py-4">Email</th>
+                                    <th className="px-6 py-4">Địa chỉ</th>
                                 </tr>
-                            ))}
-                            {suppliers.length === 0 && (
-                                <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu</td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                    <Pagination 
-                        currentPage={supplierPage} 
-                        totalPages={supplierTotalPages} 
-                        totalItems={supplierTotalItems} 
-                        onPageChange={setSupplierPage} 
-                    />
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {suppliers.map(s => (
+                                    <tr key={s.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 font-semibold text-gray-900">#{s.id}</td>
+                                        <td className="px-6 py-4 font-medium text-blue-700">{s.name}</td>
+                                        <td className="px-6 py-4">{s.contactPhone}</td>
+                                        <td className="px-6 py-4">{s.email}</td>
+                                        <td className="px-6 py-4">{s.address}</td>
+                                    </tr>
+                                ))}
+                                {suppliers.length === 0 && (
+                                    <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                        <Pagination
+                            currentPage={supplierPage}
+                            totalPages={supplierTotalPages}
+                            totalItems={supplierTotalItems}
+                            onPageChange={setSupplierPage}
+                        />
+                    </div>
                 </div>
             )}
 
@@ -250,65 +250,65 @@ export default function SupplierManagement() {
                     <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                         <div className="relative w-full md:w-1/3">
                             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                            <input 
-                                type="text" 
-                                placeholder="Tìm kiếm theo tên NCC hoặc mã phiếu..." 
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm theo tên NCC hoặc mã phiếu..."
                                 value={orderSearchTerm}
-                                onChange={(e) => {setOrderSearchTerm(e.target.value); setOrderPage(1);}}
+                                onChange={(e) => { setOrderSearchTerm(e.target.value); setOrderPage(1); }}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow text-sm"
                             />
                         </div>
                     </div>
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <table className="w-full text-left text-sm text-gray-600">
-                        <thead className="bg-gray-50/50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
-                            <tr>
-                                <th className="px-6 py-4">Mã Phiếu</th>
-                                <th className="px-6 py-4">Nhà cung cấp</th>
-                                <th className="px-6 py-4">Ngày tạo</th>
-                                <th className="px-6 py-4">Tổng tiền</th>
-                                <th className="px-6 py-4">Trạng thái</th>
-                                <th className="px-6 py-4 text-center">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {purchaseOrders.map(po => (
-                                <tr key={po.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-bold text-gray-900">PO-{po.id}</td>
-                                    <td className="px-6 py-4 font-medium text-gray-800">{po.supplier?.name}</td>
-                                    <td className="px-6 py-4">{new Date(po.orderDate).toLocaleString('vi-VN')}</td>
-                                    <td className="px-6 py-4 font-medium text-blue-600">
-                                        {po.totalAmount ? po.totalAmount.toLocaleString('vi-VN') + ' đ' : '0 đ'}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold ${po.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                                            {po.status === 'COMPLETED' ? 'Đã Nhập Kho' : 'Chờ Xử Lý'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        {po.status === 'PENDING' && (
-                                            <button 
-                                                onClick={() => handleCompleteOrder(po.id)}
-                                                className="px-3 py-1 bg-emerald-600 text-white rounded shadow-sm hover:bg-emerald-700 transition-colors text-xs flex items-center gap-1 mx-auto"
-                                            >
-                                                <Check className="w-3 h-3" /> Nhập Hàng
-                                            </button>
-                                        )}
-                                    </td>
+                        <table className="w-full text-left text-sm text-gray-600">
+                            <thead className="bg-gray-50/50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
+                                <tr>
+                                    <th className="px-6 py-4">Mã Phiếu</th>
+                                    <th className="px-6 py-4">Nhà cung cấp</th>
+                                    <th className="px-6 py-4">Ngày tạo</th>
+                                    <th className="px-6 py-4">Tổng tiền</th>
+                                    <th className="px-6 py-4">Trạng thái</th>
+                                    <th className="px-6 py-4 text-center">Thao tác</th>
                                 </tr>
-                            ))}
-                            {purchaseOrders.length === 0 && (
-                                <tr><td colSpan="6" className="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu</td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                    <Pagination 
-                        currentPage={orderPage} 
-                        totalPages={orderTotalPages} 
-                        totalItems={orderTotalItems} 
-                        onPageChange={setOrderPage} 
-                    />
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {purchaseOrders.map(po => (
+                                    <tr key={po.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 font-bold text-gray-900">PO-{po.id}</td>
+                                        <td className="px-6 py-4 font-medium text-gray-800">{po.supplier?.name}</td>
+                                        <td className="px-6 py-4">{new Date(po.orderDate).toLocaleString('vi-VN')}</td>
+                                        <td className="px-6 py-4 font-medium text-blue-600">
+                                            {po.totalAmount ? po.totalAmount.toLocaleString('vi-VN') + ' đ' : '0 đ'}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded text-xs font-bold ${po.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                                {po.status === 'COMPLETED' ? 'Đã Nhập Kho' : 'Chờ Xử Lý'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            {po.status === 'PENDING' && (
+                                                <button
+                                                    onClick={() => handleCompleteOrder(po.id)}
+                                                    className="px-3 py-1 bg-emerald-600 text-white rounded shadow-sm hover:bg-emerald-700 transition-colors text-xs flex items-center gap-1 mx-auto"
+                                                >
+                                                    <Check className="w-3 h-3" /> Nhập Hàng
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {purchaseOrders.length === 0 && (
+                                    <tr><td colSpan="6" className="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                        <Pagination
+                            currentPage={orderPage}
+                            totalPages={orderTotalPages}
+                            totalItems={orderTotalItems}
+                            onPageChange={setOrderPage}
+                        />
+                    </div>
                 </div>
             )}
 
@@ -321,10 +321,10 @@ export default function SupplierManagement() {
                             <button onClick={() => setIsSupplierModalOpen(false)}><X className="w-5 h-5 text-gray-400" /></button>
                         </div>
                         <form onSubmit={handleCreateSupplier} className="p-4 space-y-4">
-                            <input required placeholder="Tên công ty / Cửa hàng" className="w-full p-2 border rounded" value={supplierForm.name} onChange={e => setSupplierForm({...supplierForm, name: e.target.value})} />
-                            <input placeholder="Số điện thoại" className="w-full p-2 border rounded" value={supplierForm.contactPhone} onChange={e => setSupplierForm({...supplierForm, contactPhone: e.target.value})} />
-                            <input type="email" placeholder="Email" className="w-full p-2 border rounded" value={supplierForm.email} onChange={e => setSupplierForm({...supplierForm, email: e.target.value})} />
-                            <input placeholder="Địa chỉ" className="w-full p-2 border rounded" value={supplierForm.address} onChange={e => setSupplierForm({...supplierForm, address: e.target.value})} />
+                            <input required placeholder="Tên công ty / Cửa hàng" className="w-full p-2 border rounded" value={supplierForm.name} onChange={e => setSupplierForm({ ...supplierForm, name: e.target.value })} />
+                            <input placeholder="Số điện thoại" className="w-full p-2 border rounded" value={supplierForm.contactPhone} onChange={e => setSupplierForm({ ...supplierForm, contactPhone: e.target.value })} />
+                            <input type="email" placeholder="Email" className="w-full p-2 border rounded" value={supplierForm.email} onChange={e => setSupplierForm({ ...supplierForm, email: e.target.value })} />
+                            <input placeholder="Địa chỉ" className="w-full p-2 border rounded" value={supplierForm.address} onChange={e => setSupplierForm({ ...supplierForm, address: e.target.value })} />
                             <div className="flex gap-2 justify-end mt-4">
                                 <button type="button" onClick={() => setIsSupplierModalOpen(false)} className="px-4 py-2 border rounded">Hủy</button>
                                 <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Lưu</button>
@@ -346,10 +346,10 @@ export default function SupplierManagement() {
                             {/* Chọn NCC */}
                             <div className="bg-white p-4 rounded-lg border shadow-sm">
                                 <label className="block text-sm font-bold mb-2">1. Chọn Nhà cung cấp *</label>
-                                <select 
-                                    className="w-full p-2 border rounded" 
-                                    value={orderForm.supplierId} 
-                                    onChange={e => setOrderForm({...orderForm, supplierId: e.target.value})}
+                                <select
+                                    className="w-full p-2 border rounded"
+                                    value={orderForm.supplierId}
+                                    onChange={e => setOrderForm({ ...orderForm, supplierId: e.target.value })}
                                     required
                                 >
                                     <option value="">-- Chọn NCC --</option>

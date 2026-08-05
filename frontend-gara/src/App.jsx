@@ -3,7 +3,6 @@ import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/LoginPage';
 import DashboardLayout from './layouts/DashboardLayout';
 import CreateRepairOrder from "./pages/repair/CreateRepairOrder.jsx";
-import RepairOrderList from './pages/repair/RepairOrderList';
 import CustomerManagement from './pages/customer/CustomerManagement';
 import InventoryManagement from "./pages/inventory/InventoryManagement.jsx";
 import ProtectedRoute from "./layouts/ProtectedRoute.jsx";
@@ -51,7 +50,7 @@ function App() {
 
           {/* MANAGER, ADMIN */}
           <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER']} />}>
-            <Route index element={<RepairOrderList />} />
+            <Route index element={<RepairManagement />} />
             <Route path="create-order" element={<CreateRepairOrder />} />
             <Route path="inventory" element={<InventoryManagement />} />
             <Route path="suppliers" element={<SupplierManagement />} />
@@ -59,10 +58,7 @@ function App() {
             <Route path="admin" element={<AdminDashboard />} />
           </Route>
 
-          {/* MANAGER, ADMIN */}
-          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER']} />}>
-            <Route path="repairs" element={<RepairManagement />} />
-          </Route>
+
 
           {/* CHỈ DÀNH CHO MECHANIC */}
           <Route element={<ProtectedRoute allowedRoles={['ROLE_MECHANIC', 'MECHANIC']} />}>

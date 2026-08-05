@@ -12,6 +12,9 @@ export default function CustomerManagement() {
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
     const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
     const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingCustomer, setEditingCustomer] = useState(null);
+
 
     // State quản lý dữ liệu Form
     const [customerForm, setCustomerForm] = useState({ fullName: '', phoneNumber: '', email: '', address: '' });
@@ -44,6 +47,19 @@ export default function CustomerManagement() {
         fetchCustomers();
     }, [currentPage, debouncedSearch]);
 
+    //Xử lý sự kiện click vào nút sửa
+    const handleEditClick = (customer) =>{
+        setEditingCustomer({
+            id: customer.id,
+            fullName: customer.fullName || '',
+            phoneNumber: customer.phoneNumber || '',
+            email: customer.email || '',
+            address: customer.address || ''
+        });
+        setError('');
+        setIsEditModalOpen(true);
+    }
+
     // Xử lý tạo Khách hàng
     const handleCustomerSubmit = async (e) => {
         e.preventDefault();
@@ -57,6 +73,26 @@ export default function CustomerManagement() {
             setError(err.response?.data?.message || 'Có lỗi xảy ra khi thêm khách hàng.');
         }
     };
+
+    //Xử lý sự kiện cập nhật 
+    const handleEditSubmit = async (e) =>{
+        e.preventDefault();
+        setError('');
+        try{
+            await api.put(`/customers/${editingCustomer.id}`,{
+                fullName: editingCustomer.fullName,
+                phoneNumber: editingCustomer.phoneNumber,
+                email: editingCustomer.email,
+                address: editingCustomer.address
+            });
+
+            setIsEditModalOpen(false);
+            setEditingCustomer(null);
+            fetchCustomers();
+        }catch(err){
+            setError(err.response?.data?.message || "Có lỗi xảy ra khi cập nhật thông tin.");
+        }
+    }
 
     // Xử lý thêm Xe cho khách hàng
     const handleVehicleSubmit = async (e) => {
@@ -197,7 +233,9 @@ export default function CustomerManagement() {
 
                             {/* Nút thao tác nhanh */}
                             <div className="pt-4 border-t border-gray-50 flex gap-2">
-                                <button className="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+                                <button
+                                    onClick={()=>handleEditClick(customer)} 
+                                    className="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-lg transition-colors">
                                     Sửa hồ sơ
                                 </button>
                                 <button
@@ -300,6 +338,44 @@ export default function CustomerManagement() {
                     </div>
                 </div>
             )}
+
+
+             {isEditModalOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl border border-gray-100 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-800">Sửa thông tin khách</h3>
+                            <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-50">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+                            {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">{error}</div>}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Họ và tên *</label>
+                                <input required type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500" value={editingCustomer.fullName} onChange={e => setEditingCustomer({...editingCustomer, fullName: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại *</label>
+                                <input required type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500" value={editingCustomer.phoneNumber} onChange={e => setEditingCustomer({...editingCustomer, phoneNumber: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                                <input type="email" className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500" value={editingCustomer.email} onChange={e => setEditingCustomer({...editingCustomer, email: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ</label>
+                                <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500" value={editingCustomer.address} onChange={e => setEditingCustomer({...editingCustomer, address: e.target.value})} />
+                            </div>
+                            <div className="pt-4 flex gap-3 border-t border-gray-50">
+                                <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-colors">Hủy</button>
+                                <button type="submit" className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm">Lưu lại</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

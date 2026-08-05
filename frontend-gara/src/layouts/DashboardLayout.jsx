@@ -21,12 +21,11 @@ export default function DashboardLayout() {
 
   // Menu items config with allowed roles
   const menuConfig = [
-    { path: '/dashboard', label: 'Tiếp nhận xe', icon: <ClipboardList className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
+    { path: '/dashboard', label: 'Điều phối và sửa chữa', icon: <ClipboardList className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
     { path: '/dashboard/appointments', label: 'Lịch hẹn', icon: <Calendar className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER', 'ROLE_RECEPTIONIST', 'RECEPTIONIST'] },
     { path: '/dashboard/customers', label: 'Khách hàng & Xe', icon: <Users className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER', 'ROLE_RECEPTIONIST', 'RECEPTIONIST'] },
     { path: '/dashboard/inventory', label: 'Kho vật tư', icon: <Package className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
     { path: '/dashboard/services', label: 'Dịch vụ', icon: <Settings className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
-    { path: '/dashboard/repairs', label: 'Quản lý Sửa chữa', icon: <Wrench className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
     { path: '/dashboard/mechanic/tasks', label: 'Trạm Sửa Chữa', icon: <Wrench className="w-5 h-5 mr-3" />, roles: ['ROLE_MECHANIC', 'MECHANIC'] },
     { path: '/dashboard/billing', label: 'Thanh toán', icon: <CreditCard className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_RECEPTIONIST', 'RECEPTIONIST'] },
     { path: '/dashboard/hr/shifts', label: 'Quản lý Ca làm', icon: <Clock className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
@@ -37,12 +36,11 @@ export default function DashboardLayout() {
 
   // Page titles
   const getPageTitle = () => {
-    if (location.pathname === '/dashboard') return 'Khu vực tiếp nhận (Reception)';
+    if (location.pathname === '/dashboard') return 'Quản lý Điều phối & Sửa chữa';
     if (location.pathname.startsWith('/dashboard/appointments')) return 'Quản lý Lịch hẹn khách hàng';
     if (location.pathname.startsWith('/dashboard/customers')) return 'Quản lý Khách hàng & Xe';
     if (location.pathname.startsWith('/dashboard/inventory')) return 'Quản lý Kho vật tư';
     if (location.pathname.startsWith('/dashboard/services')) return 'Quản lý Danh mục Dịch vụ';
-    if (location.pathname.startsWith('/dashboard/repairs')) return 'Quản lý Sửa chữa';
     if (location.pathname.startsWith('/dashboard/billing')) return 'Thanh toán & Hóa đơn';
     if (location.pathname.startsWith('/dashboard/create-order')) return 'Tạo phiếu sửa chữa mới';
     if (location.pathname.startsWith('/dashboard/admin')) return 'Bảng điều khiển Quản trị';
