@@ -92,7 +92,7 @@ export default function DashboardLayout() {
           <button 
             onClick={() => {
               localStorage.clear();
-              window.location.href = '/login';
+              window.location.href = '/';
             }}
             className="flex items-center justify-center w-full p-3 text-rose-600 bg-rose-50 rounded-lg hover:bg-rose-100 transition font-medium"
           >

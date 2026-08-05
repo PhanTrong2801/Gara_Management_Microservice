@@ -13,15 +13,23 @@ export default function CustomerLogin() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Initialize reCAPTCHA when component mounts
-        if (!window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                'size': 'invisible',
-                'callback': (response) => {
-                    // reCAPTCHA solved
-                }
-            });
+        // Xóa reCAPTCHA cũ (nếu có) để tránh lỗi "element has been removed" do React re-render DOM
+        if (window.recaptchaVerifier) {
+            try {
+                window.recaptchaVerifier.clear();
+            } catch (e) {
+                // Ignore clear errors
+            }
+            window.recaptchaVerifier = null;
         }
+
+        // Khởi tạo lại reCAPTCHA mới gắn với thẻ div hiện tại
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': (response) => {
+                // reCAPTCHA solved
+            }
+        });
     }, []);
 
     const handleSendOtp = async (e) => {
