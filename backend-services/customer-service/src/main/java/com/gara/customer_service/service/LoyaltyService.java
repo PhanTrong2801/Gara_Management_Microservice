@@ -13,6 +13,8 @@ import com.gara.customer_service.repository.CustomerLoyaltyRepository;
 import com.gara.customer_service.repository.CustomerRepository;
 import com.gara.customer_service.repository.PointTransactionRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class LoyaltyService {
         return mapToDto(loyalty);
     }
 
+    @CacheEvict(value = { "customer_by_id", "customer_by_userid" }, allEntries = true)
     @Transactional
     public CustomerLoyaltyDto addPointsFromSpent(Long customerId, AddPointsRequest request) {
         CustomerLoyalty loyalty = loyaltyRepository.findByCustomerId(customerId)

@@ -15,9 +15,6 @@ public class FirebaseConfig {
     @PostConstruct
     public void initialize() {
         try {
-            // Attempt to initialize using the credentials file from the parent directory
-            // Depending on docker or local run, the path might be different. We will use a try catch.
-            // If it's already initialized, FirebaseApp.getInstance() will not throw.
             if (FirebaseApp.getApps().isEmpty()) {
                 String path = System.getenv("FIREBASE_SERVICE_ACCOUNT_PATH");
                 if (path == null || path.isEmpty()) {
@@ -34,7 +31,6 @@ public class FirebaseConfig {
             }
         } catch (IOException e) {
             System.err.println("Failed to initialize FirebaseApp: " + e.getMessage());
-            // We might want to fallback to GoogleCredentials.getApplicationDefault() if running in GCP
         }
     }
 }

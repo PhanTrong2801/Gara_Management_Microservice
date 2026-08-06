@@ -240,14 +240,18 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                           child: const Icon(Icons.person, color: Colors.white, size: 24),
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          'Xin chào, ${_profile?.fullName ?? 'Khách hàng'}!',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                          Expanded(
+                            child: Text(
+                              'Xin chào, ${_profile?.fullName ?? 'Khách hàng'}!',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
