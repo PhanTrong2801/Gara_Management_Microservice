@@ -3,62 +3,87 @@ name: Backend CI Pipeline
 on:
   push:
     branches: [ "master", "develop" ]
+    paths:
+      - 'backend-services/**'
+      - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [ "master", "develop" ]
+    paths:
+      - 'backend-services/**'
 
 jobs:
-  build-and-push:
+  # BƯỚC 1: Phát hiện chính xác Service nào bị thay đổi code
+  detect-changes:
     runs-on: ubuntu-latest
-
+    outputs:
+      services: ${{ steps.filter.outputs.changes }}
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        
+      - name: Detect Changed Services
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api-gateway: 'backend-services/api-gateway/**'
+            auth-service: 'backend-services/auth-service/**'
+            billing-service: 'backend-services/billing-service/**'
+            customer-service: 'backend-services/customer-service/**'
+            eureka-service: 'backend-services/eureka-service/**'
+            inventory-service: 'backend-services/inventory-service/**'
+            notification-service: 'backend-services/notification-service/**'
+            repair-service: 'backend-services/repair-service/**'
 
-    - name: Set up Java 21
-      uses: actions/setup-java@v3
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: maven
+  # BƯỚC 2: Build & Push SONG SONG (Chỉ chạy cho những service có thay đổi)
+  build-and-push:
+    needs: detect-changes
+    # Chỉ chạy job này nếu mảng services không rỗng (có ít nhất 1 service thay đổi)
+    if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      # Matrix tự động tạo N máy ảo song song tương ứng với N service bị thay đổi
+      matrix:
+        service: ${{ fromJSON(needs.detect-changes.outputs.services) }}
+      # Không hủy các máy ảo khác nếu có 1 máy bị lỗi
+      fail-fast: false
+      
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    # BƯỚC 1: Dịch toàn bộ Code ra file .jar (Dành cho cả master và develop)
-    - name: Compile tất cả Microservices (Maven Build)
-      run: |
-        SERVICES=("api-gateway" "auth-service" "billing-service" "customer-service" "eureka-service" "inventory-service" "notification-service" "repair-service")
-        for SERVICE in "${SERVICES[@]}"; do
-          echo "Đang Build $SERVICE..."
-          cd backend-services/$SERVICE
+      - name: Set up Java 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compile Microservice (${{ matrix.service }})
+        run: |
+          cd backend-services/${{ matrix.service }}
           mvn clean package -DskipTests
-          cd ../..
-        done
 
-    # BƯỚC 2: Chạy các bài Test cốt lõi
-    - name: Chạy Unit Tests
-      run: |
-        cd backend-services/auth-service && mvn test
-        cd ../../backend-services/repair-service && mvn test
+      - name: Chạy Unit Tests
+        # Chỉ chạy test cho 2 service cốt lõi theo cấu hình cũ của bạn
+        if: matrix.service == 'auth-service' || matrix.service == 'repair-service'
+        run: |
+          cd backend-services/${{ matrix.service }}
+          mvn test
 
-    # BƯỚC 3 & 4: (Chỉ chạy trên nhánh master) Đăng nhập và Đẩy Image lên Docker Hub
-    - name: Đăng nhập vào Docker Hub
-      if: github.ref == 'refs/heads/master'
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Đăng nhập vào Docker Hub
+        if: github.ref == 'refs/heads/master'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build và Push 8 Docker Images
-      if: github.ref == 'refs/heads/master'
-      run: |
-        SERVICES=("api-gateway" "auth-service" "billing-service" "customer-service" "eureka-service" "inventory-service" "notification-service" "repair-service")
-        for SERVICE in "${SERVICES[@]}"; do
-          echo "Đang đóng gói và đẩy Image cho $SERVICE..."
-          cd backend-services/$SERVICE
+      - name: Build và Push Docker Image (${{ matrix.service }})
+        if: github.ref == 'refs/heads/master'
+        run: |
+          cd backend-services/${{ matrix.service }}
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/gara-${{ matrix.service }}:latest"
           
-          # Đặt tên Image theo chuẩn: username/gara-tên_service:latest
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/gara-$SERVICE:latest"
-          
+          echo "Đang đóng gói và đẩy Image: $IMAGE_NAME"
           docker build -t $IMAGE_NAME .
           docker push $IMAGE_NAME
-          
-          cd ../..
-        done
