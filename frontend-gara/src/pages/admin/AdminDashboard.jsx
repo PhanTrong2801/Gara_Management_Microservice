@@ -159,9 +159,9 @@ export default function AdminDashboard() {
           <button onClick={() => window.location.href = '/dashboard/suppliers'} className="px-4 py-2 bg-emerald-50 text-emerald-600 font-medium rounded-lg shadow-sm hover:bg-emerald-100 transition-colors">
             Nhà cung cấp & Nhập hàng
           </button>
-          <button className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg shadow hover:bg-blue-700 transition-colors">
+          {/* <button className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg shadow hover:bg-blue-700 transition-colors">
             Xuất Báo Cáo
-          </button>
+          </button> */}
         </div>
       </div>
 

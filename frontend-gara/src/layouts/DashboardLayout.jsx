@@ -1,5 +1,5 @@
 import {Link, Outlet, useLocation} from 'react-router-dom';
-import { ClipboardList, Wrench, CreditCard, Users, Settings, HelpCircle, PlusCircle, Package, LogOut, Calendar, Clock } from 'lucide-react';
+import { ClipboardList, Wrench, CreditCard, Users, Settings, HelpCircle, PlusCircle, Package, LogOut, Calendar, Clock, QrCode } from 'lucide-react';
 
 export default function DashboardLayout() {
   const role = localStorage.getItem('role');
@@ -29,6 +29,7 @@ export default function DashboardLayout() {
     { path: '/dashboard/mechanic/tasks', label: 'Trạm Sửa Chữa', icon: <Wrench className="w-5 h-5 mr-3" />, roles: ['ROLE_MECHANIC', 'MECHANIC'] },
     { path: '/dashboard/billing', label: 'Thanh toán', icon: <CreditCard className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_RECEPTIONIST', 'RECEPTIONIST'] },
     { path: '/dashboard/hr/shifts', label: 'Quản lý Ca làm', icon: <Clock className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
+    { path: '/dashboard/hr/attendance-portal', label: 'QR Điểm danh', icon: <QrCode className="w-5 h-5 mr-3" />, roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER'] },
     { path: '/dashboard/hr/my-schedule', label: 'Lịch làm việc của tôi', icon: <Calendar className="w-5 h-5 mr-3" />, roles: ['ROLE_RECEPTIONIST', 'RECEPTIONIST', 'ROLE_MECHANIC', 'MECHANIC'] },
   ];
 
@@ -44,6 +45,7 @@ export default function DashboardLayout() {
     if (location.pathname.startsWith('/dashboard/billing')) return 'Thanh toán & Hóa đơn';
     if (location.pathname.startsWith('/dashboard/create-order')) return 'Tạo phiếu sửa chữa mới';
     if (location.pathname.startsWith('/dashboard/admin')) return 'Bảng điều khiển Quản trị';
+    if (location.pathname.startsWith('/dashboard/hr/attendance-portal')) return 'Cổng Quét Mã QR Điểm Danh';
     if (location.pathname.startsWith('/dashboard/hr/shifts')) return 'Quản lý Nhân sự & Ca làm';
     if (location.pathname.startsWith('/dashboard/hr/my-schedule')) return 'Lịch làm việc của tôi';
     return 'Dashboard';
@@ -107,12 +109,12 @@ export default function DashboardLayout() {
         <header className="flex items-center justify-between p-6 bg-white border-b">
           <h1 className="text-2xl font-bold">{getPageTitle()}</h1>
           <div className="flex items-center space-x-4">
-            <input 
+            {/* <input 
               type="text" 
               placeholder="Tìm kiếm biển số, SĐT khách..." 
               className="px-4 py-2 border rounded-full w-80 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-100" 
             />
-            <div className="w-10 h-10 bg-gray-200 rounded-full cursor-pointer"></div> {/* Avatar Placeholder */}
+            <div className="w-10 h-10 bg-gray-200 rounded-full cursor-pointer"></div> */} {/* Avatar Placeholder */}
           </div>
         </header>
         
