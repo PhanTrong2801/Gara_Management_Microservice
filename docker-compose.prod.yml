@@ -315,7 +315,7 @@ services:
     image: trongphan2801/frontend-gara:latest
     container_name: frontend-gara
     ports:
-      - "3000:80"
+      - "5173:80"
     restart: always
     networks:
       - gara-network
