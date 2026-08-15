@@ -1,0 +1,39 @@
+name: Frontend CI Pipeline
+
+on:
+  push:
+    branches: [ "master", "develop" ]
+    paths:
+      - 'frontend-gara/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    branches: [ "master", "develop" ]
+    paths:
+      - 'frontend-gara/**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Đăng nhập vào Docker Hub
+        if: github.ref == 'refs/heads/master'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build và Push Docker Image Frontend
+        if: github.ref == 'refs/heads/master'
+        run: |
+          cd frontend-gara
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/frontend-gara:latest"
+          
+          echo "Đang đóng gói và đẩy Image: $IMAGE_NAME"
+          docker build -t $IMAGE_NAME .
+          docker push $IMAGE_NAME
