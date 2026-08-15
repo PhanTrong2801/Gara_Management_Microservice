@@ -13,6 +13,8 @@ spring:
               '[/**]':
                 allowedOrigins:
                   - "http://localhost:5173"
+                  - "http://localhost:3000"
+                  - "https://app.gara-autoflow.online"
                 allowedMethods:
                   - GET
                   - POST
