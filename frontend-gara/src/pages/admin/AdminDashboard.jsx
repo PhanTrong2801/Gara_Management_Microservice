@@ -364,11 +364,11 @@ export default function AdminDashboard() {
                     value={editingUser.role}
                     onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
                   >
-                    <option value="ROLE_ADMIN">Admin</option>
-                    <option value="ROLE_MANAGER">Manager</option>
-                    <option value="ROLE_RECEPTIONIST">Lễ tân</option>
-                    <option value="ROLE_MECHANIC">Thợ kỹ thuật</option>
-                    <option value="ROLE_USER">User</option>
+                    <option value="ADMIN">Admin</option>
+                    <option value="MANAGER">Manager</option>
+                    <option value="RECEPTIONIST">Lễ tân</option>
+                    <option value="MECHANIC">Thợ kỹ thuật</option>
+                    <option value="CUSTOMER">Khách hàng</option>
                   </select>
                 </div>
               </div>
