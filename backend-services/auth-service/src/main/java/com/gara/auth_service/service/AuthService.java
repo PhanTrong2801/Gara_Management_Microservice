@@ -85,6 +85,7 @@ public class AuthService {
                         user.getFullName(),
                         user.getEmail(),
                         user.getPhone(),
+                        null,
                         user.getRole().getName(),
                         user.isActive()
                 )).collect(Collectors.toList());
@@ -100,6 +101,19 @@ public class AuthService {
         user.setRole(role);
         user.setActive(request.isActive());
         
+        if (request.getFullName() != null && !request.getFullName().isEmpty()) {
+            user.setFullName(request.getFullName());
+        }
+        if (request.getEmail() != null) {
+            user.setEmail(request.getEmail());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+        if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
+        }
+        
         userRepository.save(user);
         
         return new UserDto(
@@ -108,6 +122,7 @@ public class AuthService {
                 user.getFullName(),
                 user.getEmail(),
                 user.getPhone(),
+                null,
                 user.getRole().getName(),
                 user.isActive()
         );
@@ -122,6 +137,7 @@ public class AuthService {
                 user.getFullName(),
                 user.getEmail(),
                 user.getPhone(),
+                null,
                 user.getRole().getName(),
                 user.isActive()
         );

@@ -351,22 +351,71 @@ export default function AdminDashboard() {
             </div>
             
             <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tài khoản</label>
-                <input type="text" value={editingUser.username} disabled className="w-full p-2 border rounded bg-gray-50 text-gray-500" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tài khoản</label>
+                  <input type="text" value={editingUser.username} disabled className="w-full p-2 border rounded bg-gray-50 text-gray-500" />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò (Role)</label>
+                  <select 
+                    className="w-full p-2 border rounded focus:ring focus:ring-blue-200"
+                    value={editingUser.role}
+                    onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
+                  >
+                    <option value="ROLE_ADMIN">Admin</option>
+                    <option value="ROLE_MANAGER">Manager</option>
+                    <option value="ROLE_RECEPTIONIST">Lễ tân</option>
+                    <option value="ROLE_MECHANIC">Thợ kỹ thuật</option>
+                    <option value="ROLE_USER">User</option>
+                  </select>
+                </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò (Role)</label>
-                <select 
-                  className="w-full p-2 border rounded focus:ring focus:ring-blue-200"
-                  value={editingUser.role}
-                  onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
-                >
-                  <option value="ROLE_ADMIN">Admin</option>
-                  <option value="ROLE_MANAGER">Manager</option>
-                  <option value="ROLE_USER">User</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
+                <input 
+                  type="text" 
+                  value={editingUser.fullName || ''} 
+                  onChange={(e) => setEditingUser({...editingUser, fullName: e.target.value})}
+                  className="w-full p-2 border rounded focus:ring focus:ring-blue-200" 
+                  placeholder="Nhập họ và tên..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    value={editingUser.email || ''} 
+                    onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
+                    className="w-full p-2 border rounded focus:ring focus:ring-blue-200" 
+                    placeholder="Nhập email..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                  <input 
+                    type="text" 
+                    value={editingUser.phone || ''} 
+                    onChange={(e) => setEditingUser({...editingUser, phone: e.target.value})}
+                    className="w-full p-2 border rounded focus:ring focus:ring-blue-200" 
+                    placeholder="Nhập SĐT..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới (Bỏ trống nếu không đổi)</label>
+                <input 
+                  type="password" 
+                  value={editingUser.password || ''} 
+                  onChange={(e) => setEditingUser({...editingUser, password: e.target.value})}
+                  className="w-full p-2 border rounded focus:ring focus:ring-blue-200" 
+                  placeholder="••••••"
+                />
               </div>
 
               <div className="flex items-center mt-4">
