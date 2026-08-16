@@ -3,6 +3,7 @@ package com.gara.auth_service.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
 @NoArgsConstructor
@@ -15,5 +16,7 @@ public class UserDto {
     private String phone;
     private String password;
     private String role;
+    
+    @JsonProperty("active")
     private Boolean isActive;
 }
