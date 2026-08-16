@@ -26,7 +26,7 @@ public class UserControllerTest {
 
     @Test
     public void testGetCurrentUserSuccess() {
-        UserDto mockUser = new UserDto(1L, "testuser", "Test User", "test@example.com", "0123456789", "ROLE_CUSTOMER", true);
+        UserDto mockUser = new UserDto(1L, "testuser", "Test User", "test@example.com", "0123456789", null, "ROLE_CUSTOMER", true);
         Mockito.when(authService.getUserByUsername("testuser")).thenReturn(mockUser);
 
         ResponseEntity<UserDto> response = userController.getCurrentUser("testuser");
