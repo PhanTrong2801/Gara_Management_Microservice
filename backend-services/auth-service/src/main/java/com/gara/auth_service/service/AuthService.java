@@ -99,7 +99,7 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Role: " + request.getRole()));
 
         user.setRole(role);
-        user.setActive(request.isActive());
+        user.setActive(request.getIsActive() != null ? request.getIsActive() : false);
         
         if (request.getFullName() != null && !request.getFullName().isEmpty()) {
             user.setFullName(request.getFullName());
