@@ -7,6 +7,7 @@ import { useTablePagination } from '../../hooks/useTablePagination';
 import Pagination from '../../components/common/Pagination';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useMemo } from 'react';
+import toast from 'react-hot-toast';
 
 const STATUS_CONFIG = {
   PENDING: { label: 'Chờ xử lý', color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
@@ -82,7 +83,7 @@ export default function RepairManagement() {
       fetchOrders();
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.response?.data || 'Cập nhật trạng thái thất bại!';
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setUpdatingId(null);
     }
@@ -92,11 +93,11 @@ export default function RepairManagement() {
     try {
       setUpdatingId(order.id);
       await api.post('/billing/invoices', { repairOrderNumber: order.orderNumber });
-      alert('Đã tạo hóa đơn thành công!');
+      toast.success('Đã tạo hóa đơn thành công!');
       navigate('/dashboard/billing');
     } catch (error) {
       console.error('Lỗi tạo hóa đơn:', error);
-      alert('Hóa đơn cho phiếu này có thể đã được tạo hoặc xảy ra lỗi.');
+      toast.error('Hóa đơn cho phiếu này có thể đã được tạo hoặc xảy ra lỗi.');
     } finally {
       setUpdatingId(null);
     }

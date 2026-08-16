@@ -46,4 +46,5 @@ vnpay:
   tmn-code: "DRCY9LFI"
   hash-secret: "19SPI7QA173KCZ1R0E29IEPZ6D12137L"
   pay-url: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
-  return-url: "http://localhost:5173/vnpay-return"
+  #return-url: "http://localhost:5173/vnpay-return"
+  return-url: "https://app.gara-autoflow.online/vnpay-return"

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import api from '../../api/axiosConfig';
+import toast from 'react-hot-toast';
 
 export default function VNPayReturn() {
   const location = useLocation();
@@ -27,14 +28,17 @@ export default function VNPayReturn() {
         if (response.data.status === 'SUCCESS') {
           setStatus('success');
           setMessage(`Giao dịch thành công! Mã giao dịch: ${params.vnp_TransactionNo}`);
+          toast.success('Thanh toán VNPay thành công!');
         } else {
           setStatus('error');
           setMessage(response.data.message || 'Giao dịch thất bại!');
+          toast.error(response.data.message || 'Giao dịch VNPay thất bại!');
         }
       } catch (error) {
         console.error("Lỗi callback VNPay:", error);
         setStatus('error');
         setMessage('Lỗi kết nối đến máy chủ xác nhận thanh toán.');
+        toast.error('Lỗi kết nối khi xác nhận thanh toán.');
       }
     };
 

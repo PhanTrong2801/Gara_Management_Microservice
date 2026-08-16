@@ -25,77 +25,82 @@ import RepairTracking from './pages/customer-portal/RepairTracking.jsx';
 import BookingAppointment from './pages/customer-portal/BookingAppointment.jsx';
 import CustomerBilling from './pages/customer-portal/CustomerBilling.jsx';
 import CustomerLogin from './pages/customer-portal/CustomerLogin.jsx';
+import { Toaster } from 'react-hot-toast';
+import { ConfirmProvider } from './context/ConfirmContext.jsx';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Landing Page dành cho Khách vãng lai */}
-        <Route path="/" element={<LandingPage />} />
+    <ConfirmProvider>
+      <BrowserRouter>
+        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <Routes>
+          {/* Landing Page dành cho Khách vãng lai */}
+          <Route path="/" element={<LandingPage />} />
 
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/customer/login" element={<CustomerLogin />} />
-        
-        {/* Callback từ VNPay */}
-        <Route path="/vnpay-return" element={<VNPayReturn />} />
-
-        {/* Nhóm các trang nằm gọn bên trong Dashboard Layout */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/customer/login" element={<CustomerLogin />} />
           
-          {/* RECEPTIONIST, MANAGER, ADMIN */}
-          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER', 'ROLE_RECEPTIONIST', 'RECEPTIONIST']} />}>
-            <Route path="appointments" element={<AppointmentManagement />} />
-            <Route path="customers" element={<CustomerManagement />} />
+          {/* Callback từ VNPay */}
+          <Route path="/vnpay-return" element={<VNPayReturn />} />
+
+          {/* Nhóm các trang nằm gọn bên trong Dashboard Layout */}
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            
+            {/* RECEPTIONIST, MANAGER, ADMIN */}
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER', 'ROLE_RECEPTIONIST', 'RECEPTIONIST']} />}>
+              <Route path="appointments" element={<AppointmentManagement />} />
+              <Route path="customers" element={<CustomerManagement />} />
+            </Route>
+
+            {/* MANAGER, ADMIN */}
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER']} />}>
+              <Route index element={<RepairManagement />} />
+              <Route path="create-order" element={<CreateRepairOrder />} />
+              <Route path="inventory" element={<InventoryManagement />} />
+              <Route path="suppliers" element={<SupplierManagement />} />
+              <Route path="services" element={<ServiceCatalogManagement />} />
+              <Route path="admin" element={<AdminDashboard />} />
+            </Route>
+
+
+
+            {/* CHỈ DÀNH CHO MECHANIC */}
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_MECHANIC', 'MECHANIC']} />}>
+              <Route path="mechanic/tasks" element={<MechanicDashboard />} />
+            </Route>
+
+            {/* RECEPTIONIST, ADMIN */}
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_RECEPTIONIST', 'RECEPTIONIST']} />}>
+              <Route path="billing" element={<BillingManagement />} />
+            </Route>
+
+            {/* MANAGER, ADMIN */}
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER']} />}>
+              <Route path="hr/shifts" element={<ShiftManagement />} />
+              <Route path="hr/attendance-portal" element={<AttendancePortal />} />
+            </Route>
+
+            {/* RECEPTIONIST, MECHANIC */}
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_RECEPTIONIST', 'RECEPTIONIST', 'ROLE_MECHANIC', 'MECHANIC']} />}>
+              <Route path="hr/my-schedule" element={<MySchedule />} />
+            </Route>
+
           </Route>
 
-          {/* MANAGER, ADMIN */}
-          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER']} />}>
-            <Route index element={<RepairManagement />} />
-            <Route path="create-order" element={<CreateRepairOrder />} />
-            <Route path="inventory" element={<InventoryManagement />} />
-            <Route path="suppliers" element={<SupplierManagement />} />
-            <Route path="services" element={<ServiceCatalogManagement />} />
-            <Route path="admin" element={<AdminDashboard />} />
+          {/* Khách hàng - Customer Portal */}
+          <Route path="/customer" element={
+            <ProtectedRoute allowedRoles={['ROLE_CUSTOMER', 'CUSTOMER']}>
+              <CustomerLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<CustomerDashboard />} />
+            <Route path="tracking" element={<RepairTracking />} />
+            <Route path="booking" element={<BookingAppointment />} />
+            <Route path="billing" element={<CustomerBilling />} />
           </Route>
-
-
-
-          {/* CHỈ DÀNH CHO MECHANIC */}
-          <Route element={<ProtectedRoute allowedRoles={['ROLE_MECHANIC', 'MECHANIC']} />}>
-            <Route path="mechanic/tasks" element={<MechanicDashboard />} />
-          </Route>
-
-          {/* RECEPTIONIST, ADMIN */}
-          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_RECEPTIONIST', 'RECEPTIONIST']} />}>
-            <Route path="billing" element={<BillingManagement />} />
-          </Route>
-
-          {/* MANAGER, ADMIN */}
-          <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ADMIN', 'ROLE_MANAGER', 'MANAGER']} />}>
-            <Route path="hr/shifts" element={<ShiftManagement />} />
-            <Route path="hr/attendance-portal" element={<AttendancePortal />} />
-          </Route>
-
-          {/* RECEPTIONIST, MECHANIC */}
-          <Route element={<ProtectedRoute allowedRoles={['ROLE_RECEPTIONIST', 'RECEPTIONIST', 'ROLE_MECHANIC', 'MECHANIC']} />}>
-            <Route path="hr/my-schedule" element={<MySchedule />} />
-          </Route>
-
-        </Route>
-
-        {/* Khách hàng - Customer Portal */}
-        <Route path="/customer" element={
-          <ProtectedRoute allowedRoles={['ROLE_CUSTOMER', 'CUSTOMER']}>
-            <CustomerLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<CustomerDashboard />} />
-          <Route path="tracking" element={<RepairTracking />} />
-          <Route path="booking" element={<BookingAppointment />} />
-          <Route path="billing" element={<CustomerBilling />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </ConfirmProvider>
   );
 }
 

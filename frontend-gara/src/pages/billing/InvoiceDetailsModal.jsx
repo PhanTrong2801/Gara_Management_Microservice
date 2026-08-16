@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { X, Printer, CreditCard, Banknote, AlertTriangle } from 'lucide-react';
 import api from '../../api/axiosConfig';
+import toast from 'react-hot-toast';
+import { useConfirm } from '../../context/ConfirmContext';
 
 export default function InvoiceDetailsModal({ isOpen, onClose, invoice, onPaymentSuccess }) {
   const printRef = useRef();
@@ -13,6 +15,7 @@ export default function InvoiceDetailsModal({ isOpen, onClose, invoice, onPaymen
   const [customer, setCustomer] = useState(null);
   const [vehicle, setVehicle] = useState(null);
   const [loading, setLoading] = useState(false);
+  const confirm = useConfirm();
 
   useEffect(() => {
     if (isOpen && invoice) {
@@ -77,14 +80,19 @@ export default function InvoiceDetailsModal({ isOpen, onClose, invoice, onPaymen
   };
 
   const handlePayCash = async () => {
-    if (window.confirm('Xác nhận thu TIỀN MẶT hóa đơn này?')) {
+    const isConfirmed = await confirm({
+      title: 'Xác nhận thanh toán',
+      message: `Bạn có chắc chắn muốn xác nhận thu TIỀN MẶT cho hóa đơn ${invoice.invoiceNumber}?`
+    });
+
+    if (isConfirmed) {
       try {
         await api.post(`/billing/invoices/${invoice.invoiceNumber}/pay`, { paymentMethod: 'CASH' });
-        alert('Thanh toán Tiền mặt thành công!');
+        toast.success('Thanh toán Tiền mặt thành công!');
         onPaymentSuccess();
       } catch (error) {
         console.error('Lỗi thanh toán:', error);
-        alert('Lỗi khi thanh toán');
+        toast.error('Lỗi khi thanh toán: ' + (error.response?.data?.message || error.message));
       }
     }
   };
@@ -97,7 +105,7 @@ export default function InvoiceDetailsModal({ isOpen, onClose, invoice, onPaymen
       }
     } catch (error) {
       console.error("Lỗi khởi tạo thanh toán VNPay:", error);
-      alert("Không thể khởi tạo thanh toán VNPay lúc này.");
+      toast.error("Không thể khởi tạo thanh toán VNPay lúc này.");
     }
   };
 

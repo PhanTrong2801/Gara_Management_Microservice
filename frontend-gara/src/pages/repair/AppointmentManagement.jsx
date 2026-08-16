@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTablePagination } from '../../hooks/useTablePagination';
 import Pagination from '../../components/common/Pagination';
 import { useDebounce } from '../../hooks/useDebounce';
+import toast from 'react-hot-toast';
 
 const AppointmentManagement = () => {
     const [appointments, setAppointments] = useState([]);
@@ -64,14 +65,14 @@ const AppointmentManagement = () => {
             fetchAppointments();
         } catch (error) {
             console.error("Lỗi cập nhật trạng thái:", error);
-            alert("Lỗi cập nhật trạng thái lịch hẹn.");
+            toast.error("Lỗi cập nhật trạng thái lịch hẹn.");
         }
     };
 
     const handleCreateRepairOrder = (appt) => {
         const customer = customersMap[appt.customerId];
         if (!customer) {
-            alert("Không tìm thấy thông tin khách hàng, không thể tạo phiếu.");
+            toast.error("Không tìm thấy thông tin khách hàng, không thể tạo phiếu.");
             return;
         }
 

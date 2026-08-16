@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Save, AlertTriangle } from 'lucide-react';
 import api from '../../api/axiosConfig';
+import toast from 'react-hot-toast';
+import { useConfirm } from '../../context/ConfirmContext';
 
 export default function MechanicOrderDetailsModal({ isOpen, onClose, order, onSaveSuccess }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const confirm = useConfirm();
 
   useEffect(() => {
     if (isOpen && order) {
@@ -36,7 +39,10 @@ export default function MechanicOrderDetailsModal({ isOpen, onClose, order, onSa
       // Nếu tất cả các task đều DONE, hỏi thợ có muốn Hoàn Thành luôn phiếu không
       const allDone = tasks.every(t => t.status === 'DONE');
       if (allDone) {
-        const confirmComplete = window.confirm("Tất cả công việc đã hoàn thành. Bạn có muốn đổi trạng thái Phiếu sang Đã Sửa Xong không?");
+        const confirmComplete = await confirm({
+          title: 'Hoàn thành Phiếu Sửa Chữa',
+          message: 'Tất cả công việc đã hoàn thành. Bạn có muốn đổi trạng thái Phiếu sang Đã Sửa Xong không?'
+        });
         if (confirmComplete) {
             await api.put(`/repair/orders/${order.id}/status`, 
                 { status: 'COMPLETED' }
@@ -44,11 +50,11 @@ export default function MechanicOrderDetailsModal({ isOpen, onClose, order, onSa
         }
       }
 
-      alert("Lưu tiến độ thành công!");
+      toast.success("Lưu tiến độ thành công!");
       onSaveSuccess();
     } catch (error) {
       console.error("Lỗi khi lưu tiến độ:", error);
-      alert("Đã xảy ra lỗi khi lưu tiến độ.");
+      toast.error("Đã xảy ra lỗi khi lưu tiến độ.");
     } finally {
       setSubmitting(false);
     }

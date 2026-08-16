@@ -3,6 +3,8 @@ import { Settings, Plus, Edit, Trash2, Search, Save, X } from 'lucide-react';
 import api from '../../api/axiosConfig';
 import { useTablePagination } from '../../hooks/useTablePagination';
 import Pagination from '../../components/common/Pagination';
+import toast from 'react-hot-toast';
+import { useConfirm } from '../../context/ConfirmContext';
 
 export default function ServiceCatalogManagement() {
     const [services, setServices] = useState([]);
@@ -11,6 +13,7 @@ export default function ServiceCatalogManagement() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentService, setCurrentService] = useState({ name: '', defaultCost: 0, description: '' });
     const [isEditing, setIsEditing] = useState(false);
+    const confirm = useConfirm();
 
     const {
         currentData: currentServices,
@@ -61,19 +64,26 @@ export default function ServiceCatalogManagement() {
             }
             fetchServices();
             setIsModalOpen(false);
+            toast.success(isEditing ? 'Cập nhật dịch vụ thành công!' : 'Thêm dịch vụ thành công!');
         } catch (error) {
-            alert('Lỗi khi lưu dịch vụ!');
+            toast.error('Lỗi khi lưu dịch vụ!');
             console.error(error);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')) return;
+        const isConfirmed = await confirm({
+            title: 'Xóa dịch vụ',
+            message: 'Bạn có chắc chắn muốn xóa dịch vụ này? Hành động này không thể hoàn tác.'
+        });
+        if (!isConfirmed) return;
+        
         try {
             await api.delete(`/repair/service-catalog/${id}`);
             fetchServices();
+            toast.success('Xóa dịch vụ thành công!');
         } catch (error) {
-            alert('Lỗi khi xóa!');
+            toast.error('Lỗi khi xóa!');
             console.error(error);
         }
     };

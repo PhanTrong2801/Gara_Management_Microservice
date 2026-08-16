@@ -4,8 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
 
-  static const String baseUrl = "http://10.0.2.2:8080/api";
-  // static const String baseUrl = "http://api.gara-autoflow.online:8080/api";
+  // static const String baseUrl = "http://10.0.2.2:8080/api";
+  static const String baseUrl = "https://api.gara-autoflow.online/api";
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();

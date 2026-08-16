@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Save, XCircle, Search, ChevronDown } from 'lucide-react';
 import api from '../../api/axiosConfig.js';
+import toast from 'react-hot-toast';
 
 export default function CreateRepairOrder() {
     const navigate = useNavigate();
@@ -94,10 +95,10 @@ export default function CreateRepairOrder() {
             };
 
             await api.post('/repair/orders', payload);
-            alert('Tạo phiếu tiếp nhận thành công!');
+            toast.success('Tạo phiếu tiếp nhận thành công!');
             navigate('/dashboard'); // Quay lại trang chủ
         } catch (error) {
-            alert('Lỗi khi tạo phiếu! Vui lòng kiểm tra lại hệ thống.');
+            toast.error('Lỗi khi tạo phiếu! Vui lòng kiểm tra lại hệ thống.');
             console.error(error);
         } finally {
             setLoading(false);

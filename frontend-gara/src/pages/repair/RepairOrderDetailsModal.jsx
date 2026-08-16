@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save, PenTool, CheckCircle } from 'lucide-react';
 import api from '../../api/axiosConfig';
+import toast from 'react-hot-toast';
 
 export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSaveSuccess }) {
   const [tasks, setTasks] = useState([]);
@@ -118,11 +119,11 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
         });
       }
 
-      alert('Đã cập nhật chi tiết phiếu sửa chữa!');
+      toast.success('Đã cập nhật chi tiết phiếu sửa chữa!');
       onSaveSuccess();
     } catch (error) {
       console.error('Lỗi khi lưu:', error);
-      alert('Không thể lưu chi tiết phiếu sửa chữa.');
+      toast.error('Không thể lưu chi tiết phiếu sửa chữa.');
     } finally {
       setSaving(false);
     }
