@@ -19,6 +19,9 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.routing.key.loyalty:invoice.paid.routing.key}")
     private String routingKey;
 
+    @Value("${rabbitmq.routing.key.customer.profile.updated:customer.profile.updated.routing.key}")
+    private String routingKeyProfileUpdated;
+
     @Bean
     public Queue queue() {
         return new Queue(queue);

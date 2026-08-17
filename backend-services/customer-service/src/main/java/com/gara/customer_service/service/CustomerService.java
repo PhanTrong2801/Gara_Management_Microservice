@@ -1,6 +1,8 @@
 package com.gara.customer_service.service;
 
-import com.gara.customer_service.dto.CustomerDTO;
+import com.gara.customer_service.event.CustomerProfileUpdatedEvent;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;import com.gara.customer_service.dto.CustomerDTO;
 import com.gara.customer_service.dto.InternalCustomerDTO;
 import com.gara.customer_service.dto.VehicleDTO;
 import com.gara.customer_service.entity.Customer;
@@ -23,7 +25,13 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final VehicleRepository vehicleRepository;
+    private final RabbitTemplate rabbitTemplate;
 
+    @Value("${rabbitmq.exchange.name:gara_exchange}")
+    private String exchange;
+
+    @Value("${rabbitmq.routing.key.customer.profile.updated:customer.profile.updated.routing.key}")
+    private String routingKeyProfileUpdated;
     // 1. Đăng ký khách hàng mới
     @Transactional
     @CacheEvict(value = { "customer_by_id", "customer_by_userid" }, allEntries = true)
@@ -123,7 +131,14 @@ public class CustomerService {
         customer.setEmail(dto.getEmail());
         customer.setAddress(dto.getAddress());
 
-        return customerRepository.save(customer);
+        Customer savedCustomer = customerRepository.save(customer);
+
+        if (savedCustomer.getUserId() != null) {
+            CustomerProfileUpdatedEvent event = new CustomerProfileUpdatedEvent(savedCustomer.getUserId(), savedCustomer.getFullName());
+            rabbitTemplate.convertAndSend(exchange, routingKeyProfileUpdated, event);
+        }
+
+        return savedCustomer;
     }
 
     @Transactional
