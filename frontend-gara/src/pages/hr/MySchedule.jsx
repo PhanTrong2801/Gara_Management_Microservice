@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../api/axiosConfig';
 import { Calendar, Clock, CheckCircle, AlertTriangle, X, Play, Clock3, Plus } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function MySchedule() {
   const [shifts, setShifts] = useState([]);
@@ -101,11 +102,11 @@ export default function MySchedule() {
         workDate: workDate
       };
       await api.post('/auth/schedules/register', payload);
-      alert("Đăng ký thành công! Vui lòng chờ quản lý duyệt.");
+      toast.success("Đăng ký thành công! Vui lòng chờ quản lý duyệt.");
       fetchSchedulesData();
     } catch (error) {
       const msg = error.response?.data?.message || error.response?.data || "Lỗi khi đăng ký ca!";
-      alert(typeof msg === 'string' ? msg : "Đã xảy ra lỗi hệ thống khi đăng ký.");
+      toast.error(typeof msg === 'string' ? msg : "Đã xảy ra lỗi hệ thống khi đăng ký.");
     }
   };
 
