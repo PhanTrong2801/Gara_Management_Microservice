@@ -32,7 +32,26 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
   const fetchActiveMechanics = async () => {
     try {
       const res = await api.get('/auth/attendance/active-mechanics');
-      setActiveMechanics(res.data || []);
+      let mechanics = res.data || [];
+      
+      if (order?.mechanicId && !mechanics.some(m => m.id === order.mechanicId)) {
+        try {
+          const userRes = await api.get(`/auth/users`);
+          if (userRes.data && Array.isArray(userRes.data)) {
+             const user = userRes.data.find(u => u.id === order.mechanicId);
+             if (user) {
+               mechanics.push({
+                 ...user,
+                 fullName: user.fullName + " (Đã checkout)"
+               });
+             }
+          }
+        } catch (e) {
+          console.error("Không thể lấy thông tin thợ đã gán", e);
+        }
+      }
+      
+      setActiveMechanics(mechanics);
     } catch (error) {
       console.error('Lỗi lấy danh sách thợ:', error);
     }
@@ -145,7 +164,7 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
           </button>
         </div>
 
-        {/* Body */}
+        {/* Body */}  
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           
           {/* Điều phối thợ */}

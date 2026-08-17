@@ -37,4 +37,13 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(authService.getUserById(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

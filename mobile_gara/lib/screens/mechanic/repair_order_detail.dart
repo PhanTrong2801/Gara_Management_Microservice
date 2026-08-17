@@ -53,10 +53,42 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
           setState(() {
             _activeMechanics = data.cast<Map<String, dynamic>>();
           });
+          
+          if (_selectedMechanicId != null) {
+            final exists = _activeMechanics.any((m) => m['id'] == _selectedMechanicId);
+            if (!exists) {
+              _fetchAndAddMissingMechanic(_selectedMechanicId!);
+            }
+          }
         }
       }
     } catch (e) {
       debugPrint("Lỗi tải danh sách thợ: $e");
+    }
+  }
+
+  Future<void> _fetchAndAddMissingMechanic(int mechanicId) async {
+    try {
+      final res = await ApiService.get('/auth/users');
+      if (res.statusCode == 200) {
+        final List users = jsonDecode(utf8.decode(res.bodyBytes));
+        final user = users.cast<Map<String, dynamic>>().firstWhere(
+          (u) => u['id'] == mechanicId, 
+          orElse: () => {}
+        );
+        
+        if (user.isNotEmpty && mounted) {
+          setState(() {
+            _activeMechanics.add({
+              'id': user['id'],
+              'fullName': '${user['fullName']} (Đã checkout)',
+              'username': user['username'] ?? '',
+            });
+          });
+        }
+      }
+    } catch (e) {
+       debugPrint("Lỗi tải thợ thiếu: $e");
     }
   }
 

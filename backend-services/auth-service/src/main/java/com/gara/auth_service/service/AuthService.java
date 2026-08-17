@@ -142,4 +142,19 @@ public class AuthService {
                 user.isActive()
         );
     }
+
+    public UserDto getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + id));
+        return new UserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPhone(),
+                null,
+                user.getRole().getName(),
+                user.isActive()
+        );
+    }
 }

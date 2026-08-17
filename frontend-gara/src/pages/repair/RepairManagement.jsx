@@ -76,10 +76,15 @@ export default function RepairManagement() {
     }
   };
 
-  const handleUpdateStatus = async (orderId, newStatus) => {
-    setUpdatingId(orderId);
+  const handleUpdateStatus = async (order, newStatus) => {
+    if (newStatus === 'REPAIRING' && !order.mechanicId) {
+      toast.error('Vui lòng BẤM VÀO CHI TIẾT để phân thợ trước khi chuyển sang Đang sửa!');
+      return;
+    }
+    
+    setUpdatingId(order.id);
     try {
-      await api.put(`/repair/orders/${orderId}/status`, { status: newStatus });
+      await api.put(`/repair/orders/${order.id}/status`, { status: newStatus });
       fetchOrders();
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.response?.data || 'Cập nhật trạng thái thất bại!';
@@ -260,7 +265,7 @@ export default function RepairManagement() {
                           {nextStatus ? (
                             <button
                               disabled={updatingId === order.id}
-                              onClick={() => handleUpdateStatus(order.id, nextStatus)}
+                              onClick={() => handleUpdateStatus(order, nextStatus)}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 ${nextConfig.color} hover:opacity-80`}
                             >
                               {updatingId === order.id ? (
