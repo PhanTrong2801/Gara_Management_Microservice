@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save, PenTool, CheckCircle } from 'lucide-react';
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
+import SearchableSelect from '../../components/common/SearchableSelect';
 
 export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSaveSuccess }) {
   const [tasks, setTasks] = useState([]);
@@ -150,6 +151,21 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
 
   if (!isOpen || !order) return null;
 
+  const mechanicOptions = activeMechanics.map(m => ({
+    value: m.id,
+    label: `${m.fullName} (${m.username}) - ${m.phone || 'N/A'}`
+  }));
+
+  const serviceOptions = availableServices.map(svc => ({
+    value: svc.id,
+    label: `${svc.name} ${!isMechanic ? `- ${svc.defaultCost.toLocaleString()} VNĐ` : ''}`
+  }));
+
+  const partOptions = availableParts.map(ap => ({
+    value: ap.id,
+    label: `${ap.name} - Tồn: ${ap.stockQuantity} cái ${!isMechanic ? `- Giá: ${ap.price.toLocaleString()} VNĐ` : ''}`
+  }));
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
@@ -174,18 +190,14 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
                 👩‍🔧 Điều phối thợ sửa chữa
               </h3>
               <div className="flex gap-4 items-center">
-                <select 
-                  className="flex-1 px-3 py-2 border border-yellow-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white"
+                <SearchableSelect 
+                  className="flex-1 text-sm bg-white"
+                  options={mechanicOptions}
                   value={selectedMechanicId}
-                  onChange={(e) => setSelectedMechanicId(e.target.value)}
-                >
-                  <option value="">-- Chọn thợ đang có mặt --</option>
-                  {activeMechanics.map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.fullName} ({m.username}) - {m.phone || 'N/A'}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedMechanicId(val)}
+                  placeholder="-- Chọn thợ đang có mặt --"
+                  noOptionsMessage="Không tìm thấy thợ này"
+                />
                 <div className="text-sm text-yellow-700 italic">
                   Chỉ những thợ đã điểm danh hôm nay mới hiển thị ở đây.
                 </div>
@@ -211,19 +223,14 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
                 tasks.map((task, idx) => (
                   <div key={idx} className="flex flex-col gap-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
                     <div className="flex gap-4 items-center">
-                      {/* Luôn dùng Dropdown cho Tên dịch vụ (tránh nhập tự do) */}
-                      <select 
-                        className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={task.serviceCatalogId || ''}
-                        onChange={(e) => handleUpdateTask(idx, 'serviceCatalogId', e.target.value)}
-                      >
-                        <option value="">-- Chọn dịch vụ --</option>
-                        {availableServices.map(svc => (
-                          <option key={svc.id} value={svc.id}>
-                            {svc.name} {!isMechanic && `- ${svc.defaultCost.toLocaleString()} VNĐ`}
-                          </option>
-                        ))}
-                      </select>
+                      <SearchableSelect 
+                        className="flex-1 text-sm bg-white"
+                        options={serviceOptions}
+                        value={task.serviceCatalogId}
+                        onChange={(val) => handleUpdateTask(idx, 'serviceCatalogId', val ? val.toString() : '')}
+                        placeholder="-- Chọn dịch vụ --"
+                        noOptionsMessage="Không tìm thấy dịch vụ"
+                      />
 
                       {/* Chỉ Admin/Manager/Receptionist mới thấy giá và sửa giá */}
                       {!isMechanic && (
@@ -277,18 +284,14 @@ export default function RepairOrderDetailsModal({ isOpen, onClose, order, onSave
               ) : (
                 parts.map((part, idx) => (
                   <div key={idx} className="flex gap-4 items-center bg-gray-50 p-3 rounded-lg">
-                    <select 
-                      className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      value={part.partId || ''}
-                      onChange={(e) => handleUpdatePart(idx, 'partId', e.target.value)}
-                    >
-                      <option value="">-- Chọn phụ tùng từ kho --</option>
-                      {availableParts.map(ap => (
-                        <option key={ap.id} value={ap.id}>
-                          {ap.name} - Tồn: {ap.stockQuantity} cái {!isMechanic && `- Giá: ${ap.price.toLocaleString()} VNĐ`}
-                        </option>
-                      ))}
-                    </select>
+                    <SearchableSelect 
+                      className="flex-1 text-sm bg-white"
+                      options={partOptions}
+                      value={part.partId}
+                      onChange={(val) => handleUpdatePart(idx, 'partId', val ? val.toString() : '')}
+                      placeholder="-- Chọn phụ tùng từ kho --"
+                      noOptionsMessage="Không tìm thấy phụ tùng"
+                    />
                     
                     <input 
                       type="number" 

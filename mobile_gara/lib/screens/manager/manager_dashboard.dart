@@ -24,6 +24,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
   // Tab 1: Scheduling
   List<ShiftModel> _shifts = [];
   List<ScheduleModel> _schedules = [];
+  List<DailyShiftConfigModel> _dailyConfigs = [];
 
   // Tab 2: Appointments
   List<AppointmentModel> _appointments = [];
@@ -55,6 +56,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
       // Fetch shifts and schedules (Tab 1)
       final shiftsRes = await ApiService.get('/auth/schedules/shifts');
       final schedulesRes = await ApiService.get('/auth/schedules?startDate=$_selectedDateStr&endDate=$_selectedDateStr');
+      final configsRes = await ApiService.get('/auth/schedules/daily-config?startDate=$_selectedDateStr&endDate=$_selectedDateStr');
 
       // Fetch customers (needed for Tab 2 and Tab 3 mapping)
       final customersRes = await ApiService.get('/customers');
@@ -73,6 +75,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
         
         final shiftsDecoded = jsonDecode(utf8.decode(shiftsRes.bodyBytes));
         final schedulesDecoded = jsonDecode(utf8.decode(schedulesRes.bodyBytes));
+        final configsDecoded = configsRes.statusCode == 200 ? jsonDecode(utf8.decode(configsRes.bodyBytes)) : [];
         final customersDecoded = jsonDecode(utf8.decode(customersRes.bodyBytes));
         final appointmentsDecoded = jsonDecode(utf8.decode(appointmentsRes.bodyBytes));
         final ordersDecoded = jsonDecode(utf8.decode(ordersRes.bodyBytes));
@@ -85,6 +88,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
 
         final List shiftsData = _extract(shiftsDecoded);
         final List schedulesData = _extract(schedulesDecoded);
+        final List configsData = _extract(configsDecoded);
         final List customersData = _extract(customersDecoded);
         final List appointmentsData = _extract(appointmentsDecoded);
         final List ordersData = _extract(ordersDecoded);
@@ -95,6 +99,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
         setState(() {
           _shifts = shiftsData.map((s) => ShiftModel.fromJson(s)).toList();
           _schedules = schedulesData.map((s) => ScheduleModel.fromJson(s)).toList();
+          _dailyConfigs = configsData.map((c) => DailyShiftConfigModel.fromJson(c)).toList();
           _customersList = customers;
           _customersMap = custMap;
           _appointments = appointmentsData.map((a) => AppointmentModel.fromJson(a)).toList();
@@ -597,9 +602,13 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                     final shift = _shifts[index];
                     final shiftSchedules = _schedules.where((s) => s.shiftId == shift.id).toList();
                     final mechanics = shiftSchedules.where((s) => s.roleName == 'MECHANIC' || s.roleName == 'ROLE_MECHANIC').toList();
-                    final receptionists = shiftSchedules.where((s) => s.roleName == 'RECEPTIONIST').toList();
+                    final receptionists = shiftSchedules.where((s) => s.roleName == 'RECEPTIONIST' || s.roleName == 'CASHIER').toList();
 
-                    final isOk = mechanics.length >= 2 && receptionists.isNotEmpty;
+                    final overrideConfig = _dailyConfigs.where((c) => c.shiftId == shift.id && c.workDate == _selectedDateStr).firstOrNull;
+                    final maxM = overrideConfig != null ? overrideConfig.maxMechanics : shift.maxMechanics;
+                    final maxC = overrideConfig != null ? overrideConfig.maxCashiers : shift.maxCashiers;
+
+                    final isOk = mechanics.length >= maxM && receptionists.length >= maxC;
 
                     return Card(
                       elevation: 0,
@@ -664,16 +673,16 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Lễ tân: ${receptionists.length}/1',
+                                  'Lễ tân: ${receptionists.length}/$maxC',
                                   style: TextStyle(
-                                    color: receptionists.isNotEmpty ? Colors.green.shade800 : Colors.red,
+                                    color: receptionists.length >= maxC ? Colors.green.shade800 : Colors.red,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
-                                  'Thợ máy: ${mechanics.length}/2',
+                                  'Thợ máy: ${mechanics.length}/$maxM',
                                   style: TextStyle(
-                                    color: mechanics.length >= 2 ? Colors.green.shade800 : Colors.red,
+                                    color: mechanics.length >= maxM ? Colors.green.shade800 : Colors.red,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

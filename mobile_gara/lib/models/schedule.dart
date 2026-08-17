@@ -47,3 +47,26 @@ class ScheduleModel {
     );
   }
 }
+
+class DailyShiftConfigModel {
+  final int shiftId;
+  final String workDate;
+  final int maxMechanics;
+  final int maxCashiers;
+
+  DailyShiftConfigModel({
+    required this.shiftId,
+    required this.workDate,
+    required this.maxMechanics,
+    required this.maxCashiers,
+  });
+
+  factory DailyShiftConfigModel.fromJson(Map<String, dynamic> json) {
+    return DailyShiftConfigModel(
+      shiftId: json['shiftId'],
+      workDate: json['workDate'] ?? '',
+      maxMechanics: json['maxMechanics'] ?? 2,
+      maxCashiers: json['maxCashiers'] ?? 1,
+    );
+  }
+}

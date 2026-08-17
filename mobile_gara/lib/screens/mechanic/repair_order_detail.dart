@@ -190,6 +190,69 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
     }
   }
 
+  Future<void> _showSearchableDialog<T>({
+    required BuildContext context,
+    required List<T> items,
+    required String Function(T) itemAsString,
+    required void Function(T) onSelected,
+    required String title,
+  }) async {
+    List<T> filteredItems = List.from(items);
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: Text(title, style: const TextStyle(fontSize: 16)),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 300,
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(
+                        hintText: 'Tìm kiếm...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (val) {
+                        setStateDialog(() {
+                          filteredItems = items.where((item) {
+                            return itemAsString(item).toLowerCase().contains(val.toLowerCase());
+                          }).toList();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          return ListTile(
+                            title: Text(itemAsString(item)),
+                            onTap: () {
+                              Navigator.pop(context, item);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).then((selectedItem) {
+      if (selectedItem != null) {
+        onSelected(selectedItem as T);
+      }
+    });
+  }
+
   void _showSignatureDialog() {
     if (_isModified) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -542,21 +605,32 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
               title: const Text('Thêm Công Việc'),
               content: loadingSvc
                   ? const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))
-                  : DropdownButtonFormField<CatalogServiceModel>(
-                      initialValue: selectedSvc,
-                      hint: const Text('Chọn dịch vụ/công việc...'),
-                      isExpanded: true,
-                      items: availableServices.map((s) {
-                        return DropdownMenuItem(
-                          value: s,
-                          child: Text('${s.name} (${s.cost.toStringAsFixed(0)}đ)'),
+                  : InkWell(
+                      onTap: () {
+                        _showSearchableDialog<CatalogServiceModel>(
+                          context: context,
+                          items: availableServices,
+                          itemAsString: (s) => '${s.name} (${s.cost.toStringAsFixed(0)}đ)',
+                          title: 'Tìm và chọn dịch vụ',
+                          onSelected: (val) {
+                            setDialogState(() {
+                              selectedSvc = val;
+                            });
+                          },
                         );
-                      }).toList(),
-                      onChanged: (val) {
-                        setDialogState(() {
-                          selectedSvc = val;
-                        });
                       },
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Chọn dịch vụ/công việc...',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.search),
+                        ),
+                        child: Text(
+                          selectedSvc != null 
+                              ? '${selectedSvc!.name} (${selectedSvc!.cost.toStringAsFixed(0)}đ)'
+                              : 'Gõ để tìm kiếm...',
+                        ),
+                      ),
                     ),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
@@ -626,21 +700,32 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
                   : Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        DropdownButtonFormField<CatalogPartModel>(
-                          initialValue: selectedPart,
-                          hint: const Text('Chọn phụ tùng...'),
-                          isExpanded: true,
-                          items: availableParts.map((p) {
-                            return DropdownMenuItem(
-                              value: p,
-                              child: Text('${p.name} (${p.price.toStringAsFixed(0)}đ)'),
+                        InkWell(
+                          onTap: () {
+                            _showSearchableDialog<CatalogPartModel>(
+                              context: context,
+                              items: availableParts,
+                              itemAsString: (p) => '${p.name} (${p.price.toStringAsFixed(0)}đ)',
+                              title: 'Tìm và chọn phụ tùng',
+                              onSelected: (val) {
+                                setDialogState(() {
+                                  selectedPart = val;
+                                });
+                              },
                             );
-                          }).toList(),
-                          onChanged: (val) {
-                            setDialogState(() {
-                              selectedPart = val;
-                            });
                           },
+                          child: InputDecorator(
+                            decoration: const InputDecoration(
+                              labelText: 'Chọn phụ tùng...',
+                              border: OutlineInputBorder(),
+                              suffixIcon: Icon(Icons.search),
+                            ),
+                            child: Text(
+                              selectedPart != null 
+                                  ? '${selectedPart!.name} (${selectedPart!.price.toStringAsFixed(0)}đ)'
+                                  : 'Gõ để tìm kiếm...',
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
@@ -775,26 +860,45 @@ class _RepairOrderDetailScreenState extends State<RepairOrderDetailScreen> {
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.deepOrange),
                         ),
                         const SizedBox(height: 8),
-                        DropdownButtonFormField<int>(
-                          value: _selectedMechanicId,
-                          hint: const Text('-- Chọn thợ đang trực --'),
-                          isExpanded: true,
-                          items: _activeMechanics.map((m) {
-                            return DropdownMenuItem<int>(
-                              value: m['id'] as int,
-                              child: Text('${m['fullName']} (${m['username']})'),
+                        InkWell(
+                          onTap: () {
+                            _showSearchableDialog<Map<String, dynamic>>(
+                              context: context,
+                              items: _activeMechanics,
+                              itemAsString: (m) => '${m['fullName']} (${m['username']})',
+                              title: 'Tìm và chọn thợ',
+                              onSelected: (val) {
+                                setState(() {
+                                  _selectedMechanicId = val['id'];
+                                });
+                              },
                             );
-                          }).toList(),
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedMechanicId = val;
-                            });
                           },
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            filled: true,
-                            fillColor: Colors.orange.shade50,
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: '-- Chọn thợ đang trực --',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              filled: true,
+                              fillColor: Colors.orange.shade50,
+                              suffixIcon: const Icon(Icons.search),
+                            ),
+                            child: Builder(
+                              builder: (context) {
+                                final selected = _activeMechanics.firstWhere(
+                                  (m) => m['id'] == _selectedMechanicId,
+                                  orElse: () => {},
+                                );
+                                return Text(
+                                  selected.isNotEmpty 
+                                      ? '${selected['fullName']} (${selected['username']})'
+                                      : 'Gõ để tìm kiếm...',
+                                  style: TextStyle(
+                                    color: selected.isNotEmpty ? Colors.black87 : Colors.black54,
+                                  ),
+                                );
+                              }
+                            ),
                           ),
                         ),
                         const SizedBox(height: 6),

@@ -4,6 +4,8 @@ class ShiftModel {
   final String startTime;
   final String endTime;
   final String description;
+  final int maxMechanics;
+  final int maxCashiers;
 
   ShiftModel({
     required this.id,
@@ -11,6 +13,8 @@ class ShiftModel {
     required this.startTime,
     required this.endTime,
     required this.description,
+    required this.maxMechanics,
+    required this.maxCashiers,
   });
 
   factory ShiftModel.fromJson(Map<String, dynamic> json) {
@@ -20,6 +24,8 @@ class ShiftModel {
       startTime: json['startTime'] ?? '',
       endTime: json['endTime'] ?? '',
       description: json['description'] ?? '',
+      maxMechanics: json['maxMechanics'] ?? 2,
+      maxCashiers: json['maxCashiers'] ?? 1,
     );
   }
 }
